@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>サークルカウントゲーム - 淳専用5000チャレンジ究極版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;900&display=swap');
+        
+        :root {
+            --primary: #3b82f6;
+            --bg: #0f172a;
+        }
+
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            margin: 0;
+            padding: 0;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .screen {
+            position: fixed;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        #start-bg {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background-color: #020617;
+        }
+
+        .status-section {
+            padding: 1rem 1.25rem;
+            background: rgba(30, 41, 59, 0.8);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .canvas-container {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+            overflow: hidden;
+            background-color: #020617;
+        }
+
+        .game-circle {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            will-change: transform;
+            opacity: 0.9;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            padding: 16px;
+            background: #1e293b;
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        .num-btn {
+            aspect-ratio: 1 / 1.1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 900;
+            border-radius: 12px;
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 0 #1d4ed8;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .num-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 currentColor;
+            opacity: 0.9;
+        }
+
+        .combo-count {
+            font-weight: 900;
+            font-size: 4rem;
+            opacity: 0;
+            transform: scale(0.5) rotate(-15deg);
+            transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            line-height: 1;
+        }
+
+        .combo-count.pop {
+            opacity: 1;
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .flash-overlay {
+            position: absolute;
+            inset: 0;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 35;
+        }
+
+        .animate-flash {
+            animation: flash-anim 0.2s ease-out;
+        }
+
+        @keyframes flash-anim {
+            0% { opacity: 0.3; }
+            100% { opacity: 0; }
+        }
+
+        .feedback-pop {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8rem;
+            font-weight: 900;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 30;
+            text-align: center;
+        }
+
+        @keyframes pop-in {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        .animate-feedback { animation: pop-in 0.4s ease-out forwards; }
+
+        .btn-shine { position: relative; overflow: hidden; }
+        .btn-shine::after {
+            content: "";
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+        @keyframes shine { 0% { left: -100%; } 20% { left: 100%; } 100% { left: 100%; } }
+
+        .chest {
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .chest:hover { transform: scale(1.1); }
+        .chest:active { transform: scale(0.9); }
+        .chest-svg { width: 100px; height: 100px; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.4)); }
+
+        .log-container {
+            max-height: 60dvh;
+            overflow-y: auto;
+            width: 100%;
+            padding-right: 8px;
+        }
+        .log-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 8px;
+            padding: 12px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .loader {
+            width: 20px; height: 20px;
+            border: 3px solid #FFF; border-bottom-color: transparent; border-radius: 50%;
+            display: inline-block; animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Hidden Admin Areas */
+        .admin-hitbox {
+            position: absolute;
+            top: 0; width: 80px; height: 80px;
+            z-index: 100;
+        }
+        .admin-hitbox-left { left: 0; }
+        .admin-hitbox-right { right: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen" class="screen active items-center justify-center p-8">
+        <div id="start-bg"></div>
+        <div class="z-20 text-center flex flex-col items-center max-w-sm w-full">
+            <p class="text-red-600 font-black text-3xl mb-6 animate-bounce tracking-tighter">
+                準備はいいか！塚田淳！
+            </p>
+            <h1 class="text-4xl font-black mb-12 tracking-tighter text-white text-center leading-tight text-shadow-lg">
+                サークルカウント<br><span class="text-indigo-400 text-5xl">ゲーム</span>
+            </h1>
+            
+            <button onclick="startGame()" class="btn-shine w-full bg-blue-600 text-white py-5 rounded-3xl font-black text-2xl shadow-2xl active:scale-95 transition-transform mb-4">
+                チャレンジスタート
+            </button>
+
+            <button onclick="showLog()" class="w-full bg-slate-700/50 text-slate-300 py-3 rounded-2xl font-bold text-lg border border-white/10 active:scale-95 transition">
+                <span>ログを見る（共有）</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="status-section">
+            <div class="flex justify-between items-end mb-3">
+                <div>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">スコア</div>
+                    <div id="score-text" class="text-4xl font-black text-white leading-none">0</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">最高コンボ</div>
+                    <div id="best-combo" class="text-xl font-bold text-amber-400 leading-none">0</div>
+                </div>
+            </div>
+            <div class="space-y-1">
+                <div class="flex justify-between text-[10px] font-black text-slate-300">
+                    <span id="percent">達成率 0%</span>
+                    <span id="remaining">クリアーまで残り 5,000</span>
+                </div>
+                <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="canvas-container" id="canvas">
+            <div id="flash" class="flash-overlay"></div>
+            <div class="absolute top-5 right-5 text-right pointer-events-none z-40">
+                <div id="combo-count" class="combo-count">0</div>
+                <div id="combo-label" class="text-lg font-black hidden">COMBO</div>
+            </div>
+            <div id="feedback" class="feedback-pop"></div>
+        </div>
+        <div class="numpad" id="numpad"></div>
+    </div>
+
+    <div id="treasure-screen" class="screen items-center justify-center p-8 bg-slate-900 bg-opacity-95">
+        <div class="text-center w-full">
+            <h2 class="text-3xl font-black text-yellow-400 mb-2 text-shadow-lg">チャレンジ達成!!</h2>
+            <p class="text-white text-lg mb-12 font-bold italic">運命の報酬を選べ、塚田淳！</p>
+            <div class="flex justify-around items-center w-full max-w-md gap-4 mx-auto">
+                <div class="chest" onclick="openChest(0)">
+                    <svg class="chest-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="2" y="10" width="20" height="10" rx="2" fill="#8B4513" stroke="#FBBF24" stroke-width="1.5"/>
+                        <path d="M2 10C2 7 5 5 12 5C19 5 22 7 22 10" fill="#A0522D" stroke="#FBBF24" stroke-width="1.5"/>
+                        <rect x="10" y="9" width="4" height="3" rx="1" fill="#FBBF24"/>
+                    </svg>
+                    <p class="mt-2 text-[10px] font-bold text-yellow-400 uppercase tracking-widest">宝箱 A</p>
+                </div>
+                <div class="chest" onclick="openChest(1)">
+                    <svg class="chest-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="2" y="10" width="20" height="10" rx="2" fill="#8B4513" stroke="#FBBF24" stroke-width="1.5"/>
+                        <path d="M2 10C2 7 5 5 12 5C19 5 22 7 22 10" fill="#A0522D" stroke="#FBBF24" stroke-width="1.5"/>
+                        <rect x="10" y="9" width="4" height="3" rx="1" fill="#FBBF24"/>
+                    </svg>
+                    <p class="mt-2 text-[10px] font-bold text-yellow-400 uppercase tracking-widest">宝箱 B</p>
+                </div>
+                <div class="chest" onclick="openChest(2)">
+                    <svg class="chest-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="2" y="10" width="20" height="10" rx="2" fill="#8B4513" stroke="#FBBF24" stroke-width="1.5"/>
+                        <path d="M2 10C2 7 5 5 12 5C19 5 22 7 22 10" fill="#A0522D" stroke="#FBBF24" stroke-width="1.5"/>
+                        <rect x="10" y="9" width="4" height="3" rx="1" fill="#FBBF24"/>
+                    </svg>
+                    <p class="mt-2 text-[10px] font-bold text-yellow-400 uppercase tracking-widest">宝箱 C</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="clear-screen" class="screen items-center justify-center p-6 bg-slate-950">
+        <div class="text-7xl mb-4 animate-pulse">👑</div>
+        <h2 class="text-2xl font-black mb-6 text-indigo-400 uppercase tracking-tighter text-center">伝説達成</h2>
+        <div class="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 w-full max-w-xs mb-8 text-center relative overflow-hidden shadow-2xl">
+            <div id="timestamp" class="text-[10px] font-bold text-slate-500 mb-4 uppercase tracking-widest"></div>
+            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-2 italic">獲得報酬</p>
+            <p id="bonus-value-text" class="text-6xl font-black italic tracking-tighter mb-4 text-white">0円</p>
+            <div class="border-t border-white/10 pt-4">
+                <p class="text-[10px] text-slate-400 font-bold tracking-wider italic">認定プレイヤー: <span class="text-white font-black">塚田淳</span></p>
+            </div>
+        </div>
+        <p class="text-yellow-400 font-black mb-8 text-center text-xl animate-bounce">最高の記録だ、塚田淳！！</p>
+        <button onclick="backToStart()" class="w-full max-w-xs bg-indigo-600 py-5 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition">タイトルに戻る</button>
+    </div>
+
+    <div id="log-screen" class="screen items-center justify-center p-6 bg-slate-950">
+        <div class="admin-hitbox admin-hitbox-left" onclick="handleAdminTap('left')"></div>
+        <div class="admin-hitbox admin-hitbox-right" onclick="handleAdminTap('right')"></div>
+        <h2 class="text-2xl font-black mb-6 text-indigo-400 uppercase tracking-tighter text-center italic">共有：栄光の記録</h2>
+        <div id="log-list" class="log-container">
+            <div class="flex justify-center py-10"><span class="loader"></span></div>
+        </div>
+        <button onclick="backToStartFromLog()" class="mt-8 w-full max-w-xs bg-slate-700 py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition">戻る</button>
+    </div>
+
+    <div id="admin-confirm-modal" style="display: none;" class="fixed inset-0 bg-black/80 z-[200] items-center justify-center p-4">
+        <div class="bg-slate-800 p-6 rounded-2xl w-full max-w-sm text-center border border-rose-500/50 shadow-2xl">
+            <h3 class="text-xl font-black text-rose-500 mb-4">【管理者認証】</h3>
+            <p class="mb-6 font-bold text-white text-sm">すべての共有ログを消去しますか？<br>この操作は取り消せません。</p>
+            <div class="flex gap-4">
+                <button onclick="cancelAdminClear()" class="flex-1 py-3 bg-slate-600 text-white rounded-xl font-bold active:scale-95 transition">キャンセル</button>
+                <button onclick="executeAdminClear()" class="flex-1 py-3 bg-rose-600 text-white rounded-xl font-bold shadow-lg shadow-rose-600/20 active:scale-95 transition">消去する</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Init (Your Config) ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyD9TtJvfUILwBzsDjXAlZBH5R5Khp1pRzA",
+          authDomain: "jungame.firebaseapp.com",
+          projectId: "jungame",
+          storageBucket: "jungame.firebasestorage.app",
+          messagingSenderId: "410177738553",
+          appId: "1:410177738553:web:56d7e876c1c7b4333a7ae8",
+          measurementId: "G-QGL9HRKVHX"
+        };
+        
+        let db, auth;
+        const appId = 'atsushi-5000-challenge-final'; // Firestoreパス用ID
+        
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            signInAnonymously(auth);
+        } catch (err) { console.error("Firebase init failed."); }
+
+        let currentUser = null;
+        if (auth) { onAuthStateChanged(auth, (user) => { currentUser = user; }); }
+
+        // --- Global State ---
+        const TARGET = 5000;
+        let score = 0, combo = 0, maxCombo = 0, circles = [], count = 0, anim, isStarted = false, chestValues = [];
+        let isChestOpened = false;
+        let currentComboColor = '#3b82f6', currentShadowColor = '#1d4ed8';
+
+        // --- Admin Secret Logic ---
+        let leftTap = 0, lastTap = 0;
+        window.handleAdminTap = (side) => {
+            const now = Date.now();
+            if (now - lastTap > 2000) leftTap = 0;
+            lastTap = now;
+            if (side === 'left') leftTap++;
+            else if (side === 'right' && leftTap >= 3) {
+                leftTap = 0;
+                document.getElementById('admin-confirm-modal').style.display = 'flex';
+            }
+        };
+
+        window.cancelAdminClear = () => { document.getElementById('admin-confirm-modal').style.display = 'none'; };
+        window.executeAdminClear = async () => {
+            document.getElementById('admin-confirm-modal').style.display = 'none';
+            if (db && currentUser) {
+                const logCol = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
+                const snap = await getDocs(logCol);
+                for (const d of snap.docs) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'logs', d.id)); }
+            }
+        };
+
+        // --- Audio Engine ---
+        let audioCtx;
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        function playSound(type) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime, osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if (type === 'correct') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(880, now);
+                osc.frequency.exponentialRampToValueAtTime(1320, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'combo') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.05);
+                gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+            } else if (type === 'wrong') {
+                const playB = (t) => {
+                    const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square';
+                    o.frequency.setValueAtTime(120, t); g.gain.setValueAtTime(0.1, t);
+                    g.gain.linearRampToValueAtTime(0, t + 0.1); o.start(t); o.stop(t + 0.1);
+                };
+                playB(now); playB(now + 0.15); 
+            }
+        }
+
+        // --- UI Utils ---
+        function generateNumpad() {
+            const pad = document.getElementById('numpad');
+            pad.innerHTML = '';
+            for(let i=1; i<=10; i++) {
+                const btn = document.createElement('div');
+                btn.className = 'num-btn'; btn.innerText = i;
+                btn.style.backgroundColor = currentComboColor;
+                btn.style.boxShadow = `0 4px 0 ${currentShadowColor}`;
+                btn.onclick = () => window.check(i);
+                pad.appendChild(btn);
+            }
+        }
+
+        const COLORS = ['#FF6B6B', '#4D96FF', '#6BCB77', '#FFD93D', '#917FB3', '#FF87CA', '#00D7FF'];
+        class Circle {
+            constructor(parent) {
+                this.parent = parent; this.size = 40 + Math.random() * 40; this.el = document.createElement('div');
+                this.el.className = 'game-circle'; this.el.style.width = `${this.size}px`; this.el.style.height = `${this.size}px`;
+                this.el.style.backgroundColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+                this.x = Math.random() * (parent.clientWidth - this.size); this.y = Math.random() * (parent.clientHeight - this.size);
+                const spd = isStarted ? 1.0 : 0.6; this.dx = (Math.random() - 0.5) * spd * 4; this.dy = (Math.random() - 0.5) * spd * 4;
+                parent.appendChild(this.el);
+            }
+            update() {
+                this.x += this.dx; this.y += this.dy;
+                const w = this.parent.clientWidth, h = this.parent.clientHeight;
+                if (this.x <= 0) { this.x = 0; this.dx = Math.abs(this.dx); }
+                else if (this.x + this.size >= w) { this.x = w - this.size; this.dx = -Math.abs(this.dx); }
+                if (this.y <= 0) { this.y = 0; this.dy = Math.abs(this.dy); }
+                else if (this.y + this.size >= h) { this.y = h - this.size; this.dy = -Math.abs(this.dy); }
+                this.el.style.transform = `translate3d(${this.x}px, ${this.y}px, 0)`;
+            }
+        }
+
+        // --- Navigation ---
+        window.startGame = () => {
+            initAudio(); isStarted = true;
+            document.getElementById('start-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            generateNumpad(); resetGameData(); initCircles(); if (!anim) loop();
+        };
+
+        window.showLog = () => {
+            document.getElementById('start-screen').classList.remove('active');
+            document.getElementById('log-screen').classList.add('active');
+            listenToLogs();
+        };
+
+        window.backToStartFromLog = () => {
+            document.getElementById('log-screen').classList.remove('active');
+            document.getElementById('start-screen').classList.add('active');
+            if (unsubscribeLogs) unsubscribeLogs();
+        };
+
+        window.backToStart = () => {
+            isStarted = false;
+            document.getElementById('clear-screen').classList.remove('active');
+            document.getElementById('start-screen').classList.add('active');
+            initStartBg();
+        };
+
+        function initCircles() {
+            circles.forEach(c => c.el.remove()); circles = [];
+            count = Math.floor(Math.random() * 10) + 1;
+            for (let i = 0; i < count; i++) circles.push(new Circle(document.getElementById('canvas')));
+        }
+
+        function loop() {
+            if (isStarted) circles.forEach(c => c.update());
+            else bgCircles.forEach(c => c.update());
+            anim = requestAnimationFrame(loop);
+        }
+
+        window.check = (num) => {
+            initAudio(); 
+            if (num === count) {
+                playSound('correct');
+                score++; combo++; if (combo > maxCombo) maxCombo = combo;
+                updateComboEffect(); showFeedback('○', 'text-blue-400'); updateUI();
+                if (score >= TARGET) { setTimeout(prepareTreasure, 500); return; }
+            } else {
+                playSound('wrong');
+                score = Math.max(0, score - 1); combo = 0;
+                resetComboEffect();
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
+                showFeedback('×', 'text-rose-500'); updateUI();
+            }
+            initCircles();
+        };
+
+        function updateComboEffect() {
+            if (combo >= 2) {
+                const countEl = document.getElementById('combo-count');
+                const labelEl = document.getElementById('combo-label');
+                countEl.innerText = combo; labelEl.classList.remove('hidden');
+                let nc = '#3b82f6', ns = '#1d4ed8';
+                if (combo > 40) { nc = '#ef4444'; ns = '#b91c1c'; }
+                else if (combo > 30) { nc = '#f97316'; ns = '#c2410c'; }
+                else if (combo > 20) { nc = '#eab308'; ns = '#a16207'; }
+                else if (combo > 10) { nc = '#60a5fa'; ns = '#2563eb'; }
+                if (nc !== currentComboColor) {
+                    playSound('combo'); if (navigator.vibrate) navigator.vibrate(300);
+                    currentComboColor = nc; currentShadowColor = ns;
+                    document.querySelectorAll('.num-btn').forEach(btn => {
+                        btn.style.backgroundColor = nc; btn.style.boxShadow = `0 4px 0 ${ns}`;
+                    });
+                }
+                countEl.style.color = nc; labelEl.style.color = nc;
+                countEl.classList.remove('pop'); void countEl.offsetWidth; countEl.classList.add('pop');
+                document.getElementById('flash').classList.remove('animate-flash');
+                void document.getElementById('flash').offsetWidth; document.getElementById('flash').classList.add('animate-flash');
+            }
+        }
+
+        function resetComboEffect() {
+            const countEl = document.getElementById('combo-count');
+            const labelEl = document.getElementById('combo-label');
+            countEl.classList.remove('pop'); labelEl.classList.add('hidden');
+            currentComboColor = '#3b82f6'; currentShadowColor = '#1d4ed8';
+            document.querySelectorAll('.num-btn').forEach(btn => {
+                btn.style.backgroundColor = '#3b82f6'; btn.style.boxShadow = `0 4px 0 #1d4ed8`;
+            });
+        }
+
+        function showFeedback(text, colorClass) {
+            const f = document.getElementById('feedback');
+            f.innerText = text; f.className = `feedback-pop ${colorClass} animate-feedback`;
+            setTimeout(() => f.classList.remove('animate-feedback'), 400);
+        }
+
+        function updateUI() {
+            document.getElementById('score-text').innerText = score.toLocaleString();
+            document.getElementById('best-combo').innerText = maxCombo;
+            const p = (score / TARGET) * 100;
+            document.getElementById('progress-bar').style.width = `${Math.min(p, 100)}%`;
+            document.getElementById('percent').innerText = `達成率 ${Math.floor(Math.min(p, 100))}%`;
+            document.getElementById('remaining').innerText = `残り ${Math.max(0, TARGET - score).toLocaleString()}`;
+        }
+
+        function prepareTreasure() {
+            isStarted = false; isChestOpened = false;
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('treasure-screen').classList.add('active');
+            let array = [1500, 2500, 3500];
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            chestValues = array;
+        }
+
+        let unsubscribeLogs = null;
+        function listenToLogs() {
+            const listEl = document.getElementById('log-list');
+            if (!db || !currentUser) {
+                listEl.innerHTML = '<p class="text-slate-500 text-center py-8">接続エラー</p>';
+                return;
+            }
+            if (unsubscribeLogs) unsubscribeLogs();
+            const logCol = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
+            unsubscribeLogs = onSnapshot(logCol, (snap) => {
+                const logs = snap.docs.map(d => d.data()).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                if (logs.length === 0) { listEl.innerHTML = '<p class="text-slate-500 text-center py-8">記録なし</p>'; return; }
+                listEl.innerHTML = logs.map(l => {
+                    let colorClass = 'text-white';
+                    if (l.reward === 1500) colorClass = 'text-blue-500';
+                    else if (l.reward === 2500) colorClass = 'text-emerald-500';
+                    else if (l.reward === 3500) colorClass = 'text-rose-500';
+                    return `<div class="log-item"><div><div class="text-[10px] text-slate-400">${l.date} ${l.time}</div><div class="text-xs text-indigo-400 font-black">CLEARED</div></div><div class="text-2xl font-black italic ${colorClass}">${l.reward?.toLocaleString()}円</div></div>`;
+                }).join('');
+            });
+        }
+
+        window.openChest = (index) => {
+            if (isChestOpened) return;
+            isChestOpened = true; playSound('combo');
+            const reward = chestValues[index];
+            const bonusTextEl = document.getElementById('bonus-value-text');
+            bonusTextEl.innerText = `${reward.toLocaleString()}円`;
+            if (reward === 1500) bonusTextEl.style.color = '#3b82f6'; 
+            else if (reward === 2500) bonusTextEl.style.color = '#10b981'; 
+            else if (reward === 3500) bonusTextEl.style.color = '#ef4444';
+            const now = new Date();
+            const dateStr = now.getFullYear() + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + ('0' + now.getDate()).slice(-2);
+            const timeStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
+            document.getElementById('timestamp').innerText = `${dateStr} ${timeStr}`;
+            document.getElementById('treasure-screen').classList.remove('active');
+            document.getElementById('clear-screen').classList.add('active');
+            if (db && currentUser) {
+                const logCol = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
+                addDoc(logCol, { date: dateStr, time: timeStr, reward: reward, timestamp: serverTimestamp() }).catch(e => console.error(e));
+            }
+        };
+
+        function resetGameData() { score = 0; combo = 0; maxCombo = 0; updateUI(); resetComboEffect(); }
+        let bgCircles = [];
+        function initStartBg() {
+            bgCircles.forEach(c => c.el.remove()); bgCircles = [];
+            for (let i = 0; i < 8; i++) bgCircles.push(new Circle(document.getElementById('start-bg')));
+        }
+        window.addEventListener('resize', () => { if (!isStarted) initStartBg(); });
+        window.addEventListener('DOMContentLoaded', () => { initStartBg(); loop(); });
+    </script>
+</body>
+</html>
