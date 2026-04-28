@@ -206,6 +206,18 @@
         }
         .admin-hitbox-left { left: 0; }
         .admin-hitbox-right { right: 0; }
+
+        /* 追加：揺れるアニメーション */
+        .shake {
+            animation: shake-anim 0.3s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake-anim {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-10px) rotate(-1deg); }
+            40% { transform: translateX(10px) rotate(1deg); }
+            60% { transform: translateX(-10px) rotate(-1deg); }
+            80% { transform: translateX(10px) rotate(1deg); }
+        }
     </style>
 </head>
 <body>
@@ -421,12 +433,21 @@
         function generateNumpad() {
             const pad = document.getElementById('numpad');
             pad.innerHTML = '';
-            for(let i=1; i<=10; i++) {
+            
+            // テンキーのシャッフル機能
+            let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+            for (let i = nums.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [nums[i], nums[j]] = [nums[j], nums[i]];
+            }
+
+            for(let i=0; i<nums.length; i++) {
+                const num = nums[i];
                 const btn = document.createElement('div');
-                btn.className = 'num-btn'; btn.innerText = i;
+                btn.className = 'num-btn'; btn.innerText = num;
                 btn.style.backgroundColor = currentComboColor;
                 btn.style.boxShadow = `0 4px 0 ${currentShadowColor}`;
-                btn.onclick = () => window.check(i);
+                btn.onclick = () => window.check(num);
                 pad.appendChild(btn);
             }
         }
@@ -457,7 +478,7 @@
             initAudio(); isStarted = true;
             document.getElementById('start-screen').classList.remove('active');
             document.getElementById('game-screen').classList.add('active');
-            generateNumpad(); resetGameData(); initCircles(); if (!anim) loop();
+            resetGameData(); initCircles(); if (!anim) loop();
         };
 
         window.showLog = () => {
@@ -483,6 +504,7 @@
             circles.forEach(c => c.el.remove()); circles = [];
             count = Math.floor(Math.random() * 10) + 1;
             for (let i = 0; i < count; i++) circles.push(new Circle(document.getElementById('canvas')));
+            generateNumpad(); // 丸が再生成されるたびにテンキーも再生成（シャッフル）する
         }
 
         function loop() {
@@ -504,6 +526,11 @@
                 resetComboEffect();
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
                 showFeedback('×', 'text-rose-500'); updateUI();
+
+                // 画面を揺らす演出
+                document.body.classList.remove('shake');
+                void document.body.offsetWidth; // 連続で間違えた時のためにリフローを強制
+                document.body.classList.add('shake');
             }
             initCircles();
         };
@@ -602,7 +629,7 @@
             else if (reward === 3500) bonusTextEl.style.color = '#ef4444';
             const now = new Date();
             const dateStr = now.getFullYear() + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + ('0' + now.getDate()).slice(-2);
-            const timeStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
+            const timeStr = ('0' +getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
             document.getElementById('timestamp').innerText = `${dateStr} ${timeStr}`;
             document.getElementById('treasure-screen').classList.remove('active');
             document.getElementById('clear-screen').classList.add('active');
