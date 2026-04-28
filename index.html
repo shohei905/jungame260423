@@ -23,6 +23,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            /* ゲーム中の引っ張り更新などを防止 */
             touch-action: none;
         }
 
@@ -92,6 +93,8 @@
             box-shadow: 0 4px 0 #1d4ed8;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
+            /* 連打時の画面ズーム防止対策 */
+            touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -169,16 +172,30 @@
         .chest {
             cursor: pointer;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            touch-action: manipulation;
         }
         .chest:hover { transform: scale(1.1); }
         .chest:active { transform: scale(0.9); }
         .chest-svg { width: 100px; height: 100px; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.4)); }
+
+        .shake {
+            animation: shake-anim 0.3s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake-anim {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-10px) rotate(-1deg); }
+            40% { transform: translateX(10px) rotate(1deg); }
+            60% { transform: translateX(-10px) rotate(-1deg); }
+            80% { transform: translateX(10px) rotate(1deg); }
+        }
 
         .log-container {
             max-height: 60dvh;
             overflow-y: auto;
             width: 100%;
             padding-right: 8px;
+            /* スクロール制限を解除（これがないとスマホでログが見れない） */
+            touch-action: pan-y;
         }
         .log-item {
             background: rgba(255,255,255,0.05);
@@ -198,7 +215,6 @@
         }
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Hidden Admin Areas */
         .admin-hitbox {
             position: absolute;
             top: 0; width: 80px; height: 80px;
@@ -207,16 +223,16 @@
         .admin-hitbox-left { left: 0; }
         .admin-hitbox-right { right: 0; }
 
-        /* 追加：揺れるアニメーション */
-        .shake {
-            animation: shake-anim 0.3s cubic-bezier(.36,.07,.19,.97) both;
+        .title-nowrap {
+            white-space: nowrap;
         }
-        @keyframes shake-anim {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-10px) rotate(-1deg); }
-            40% { transform: translateX(10px) rotate(1deg); }
-            60% { transform: translateX(-10px) rotate(-1deg); }
-            80% { transform: translateX(10px) rotate(1deg); }
+        
+        .presentation-area {
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
     </style>
 </head>
@@ -308,13 +324,45 @@
         </div>
     </div>
 
+    <!-- ダブルアップチャレンジ画面 -->
+    <div id="double-up-screen" class="screen items-center justify-center p-8 bg-slate-900 bg-opacity-95">
+        <div class="text-center w-full">
+            <p class="text-red-600 font-black text-2xl sm:text-3xl mb-4 animate-bounce tracking-tighter">準備はいいか！塚田淳！</p>
+            <h2 class="text-3xl sm:text-4xl font-black text-rose-500 mb-2 text-shadow-lg animate-pulse tracking-tighter title-nowrap">ダブルアップチャレンジ</h2>
+            <p class="text-slate-300 text-lg mb-8 font-bold italic">現在の報酬: <span id="current-reward-text" class="text-3xl text-blue-400 drop-shadow-md">0円</span></p>
+
+            <div id="double-up-actions" class="flex flex-col gap-4 w-full max-w-sm mx-auto">
+                <div class="bg-slate-800/80 border border-slate-600 rounded-xl p-3 mb-2 shadow-lg">
+                    <p class="text-cyan-400 font-black text-xl mb-1 tracking-wider">勝率 50%</p>
+                    <p class="text-slate-300 text-sm">成功すれば報酬<span class="text-yellow-400 font-bold text-xl ml-1">2倍</span>！<br>失敗すれば<span class="text-rose-500 font-bold">すべて没収</span>。</p>
+                </div>
+                
+                <button onclick="playDoubleUp()" class="btn-shine w-full bg-rose-600 text-white py-4 rounded-3xl font-black text-2xl shadow-[0_0_20px_rgba(225,29,72,0.5)] active:scale-95 transition-transform">挑戦する</button>
+                <button onclick="declineDoubleUp()" class="w-full bg-slate-700/80 text-slate-300 py-3 rounded-2xl font-bold text-lg border border-white/10 active:scale-95 transition">やめておく (確定)</button>
+            </div>
+
+            <!-- 動的ルーレット演出・結果表示用コンテナ -->
+            <div id="double-up-presentation" class="hidden w-full max-w-sm mx-auto presentation-area mt-4">
+                <div id="double-up-roulette" class="hidden w-full flex-col items-center justify-center">
+                    <p id="roulette-status-text" class="text-slate-400 font-bold mb-4 animate-pulse text-lg">抽選中...</p>
+                    <div id="roulette-box" class="w-full bg-slate-800 border-4 border-slate-600 rounded-2xl p-8 text-center transition-colors duration-75 shadow-2xl">
+                        <span id="roulette-text" class="text-5xl font-black text-white drop-shadow-md">運命</span>
+                    </div>
+                </div>
+                <div id="double-up-result" class="hidden w-full flex-col items-center justify-center opacity-0 transition-opacity duration-300">
+                    <div id="double-up-result-text" class="text-6xl sm:text-7xl font-black transform scale-50 transition-transform duration-500"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="clear-screen" class="screen items-center justify-center p-6 bg-slate-950">
         <div class="text-7xl mb-4 animate-pulse">👑</div>
         <h2 class="text-2xl font-black mb-6 text-indigo-400 uppercase tracking-tighter text-center">伝説達成</h2>
         <div class="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 w-full max-w-xs mb-8 text-center relative overflow-hidden shadow-2xl">
             <div id="timestamp" class="text-[10px] font-bold text-slate-500 mb-4 uppercase tracking-widest"></div>
             <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-2 italic">獲得報酬</p>
-            <p id="bonus-value-text" class="text-6xl font-black italic tracking-tighter mb-4 text-white">0円</p>
+            <p id="bonus-value-text" class="text-5xl font-black italic tracking-tighter mb-4 text-white drop-shadow-lg">0円</p>
             <div class="border-t border-white/10 pt-4">
                 <p class="text-[10px] text-slate-400 font-bold tracking-wider italic">認定プレイヤー: <span class="text-white font-black">塚田淳</span></p>
             </div>
@@ -323,9 +371,11 @@
         <button onclick="backToStart()" class="w-full max-w-xs bg-indigo-600 py-5 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition">タイトルに戻る</button>
     </div>
 
+    <!-- ログ画面（共有） -->
     <div id="log-screen" class="screen items-center justify-center p-6 bg-slate-950">
         <div class="admin-hitbox admin-hitbox-left" onclick="handleAdminTap('left')"></div>
         <div class="admin-hitbox admin-hitbox-right" onclick="handleAdminTap('right')"></div>
+        
         <h2 class="text-2xl font-black mb-6 text-indigo-400 uppercase tracking-tighter text-center italic">共有：栄光の記録</h2>
         <div id="log-list" class="log-container">
             <div class="flex justify-center py-10"><span class="loader"></span></div>
@@ -333,6 +383,7 @@
         <button onclick="backToStartFromLog()" class="mt-8 w-full max-w-xs bg-slate-700 py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition">戻る</button>
     </div>
 
+    <!-- ログ消去確認モーダル -->
     <div id="admin-confirm-modal" style="display: none;" class="fixed inset-0 bg-black/80 z-[200] items-center justify-center p-4">
         <div class="bg-slate-800 p-6 rounded-2xl w-full max-w-sm text-center border border-rose-500/50 shadow-2xl">
             <h3 class="text-xl font-black text-rose-500 mb-4">【管理者認証】</h3>
@@ -349,7 +400,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase Init (Your Config) ---
         const firebaseConfig = {
           apiKey: "AIzaSyD9TtJvfUILwBzsDjXAlZBH5R5Khp1pRzA",
           authDomain: "jungame.firebaseapp.com",
@@ -361,7 +411,7 @@
         };
         
         let db, auth;
-        const appId = 'atsushi-5000-challenge-final'; // Firestoreパス用ID
+        const appId = 'atsushi-5000-challenge-final'; 
         
         try {
             const app = initializeApp(firebaseConfig);
@@ -373,13 +423,13 @@
         let currentUser = null;
         if (auth) { onAuthStateChanged(auth, (user) => { currentUser = user; }); }
 
-        // --- Global State ---
+        // 正式版：目標5000
         const TARGET = 5000;
         let score = 0, combo = 0, maxCombo = 0, circles = [], count = 0, anim, isStarted = false, chestValues = [];
         let isChestOpened = false;
         let currentComboColor = '#3b82f6', currentShadowColor = '#1d4ed8';
-
-        // --- Admin Secret Logic ---
+        let currentReward = 0; 
+        
         let leftTap = 0, lastTap = 0;
         window.handleAdminTap = (side) => {
             const now = Date.now();
@@ -402,13 +452,30 @@
             }
         };
 
-        // --- Audio Engine ---
+        // === 金額に応じた段階的な色の取得関数（6パターン完全個別指定） ===
+        function getRewardColorClass(reward) {
+            if (reward === 0) return { class: 'text-slate-500', shadow: 'none' };
+            if (reward === 1500) return { class: 'text-blue-400', shadow: 'drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]' }; 
+            if (reward === 2500) return { class: 'text-emerald-400', shadow: 'drop-shadow-[0_0_10px_rgba(52,211,153,0.6)]' }; 
+            if (reward === 3000) return { class: 'text-fuchsia-400 font-black', shadow: 'drop-shadow-[0_0_12px_rgba(232,121,249,0.7)]' }; 
+            if (reward === 3500) return { class: 'text-cyan-400 font-black', shadow: 'drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]' }; 
+            if (reward === 5000) return { class: 'text-amber-400 font-black', shadow: 'drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]' }; 
+            if (reward === 7000) return { class: 'text-rose-500 font-black animate-pulse', shadow: 'drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]' }; 
+            return { class: 'text-white', shadow: 'none' };
+        }
+
         let audioCtx;
-        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        function initAudio() { 
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+            // iOS等のAutoplay制限回避のため明示的にresume
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
         function playSound(type) {
             if (!audioCtx) return;
             const now = audioCtx.currentTime, osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
+            
             if (type === 'correct') {
                 osc.type = 'sine'; osc.frequency.setValueAtTime(880, now);
                 osc.frequency.exponentialRampToValueAtTime(1320, now + 0.1);
@@ -426,21 +493,25 @@
                     g.gain.linearRampToValueAtTime(0, t + 0.1); o.start(t); o.stop(t + 0.1);
                 };
                 playB(now); playB(now + 0.15); 
+            } else if (type === 'tick') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1000, now + 0.05);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
             }
         }
 
-        // --- UI Utils ---
         function generateNumpad() {
             const pad = document.getElementById('numpad');
             pad.innerHTML = '';
-            
-            // テンキーのシャッフル機能
             let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
             for (let i = nums.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [nums[i], nums[j]] = [nums[j], nums[i]];
             }
-
             for(let i=0; i<nums.length; i++) {
                 const num = nums[i];
                 const btn = document.createElement('div');
@@ -473,7 +544,6 @@
             }
         }
 
-        // --- Navigation ---
         window.startGame = () => {
             initAudio(); isStarted = true;
             document.getElementById('start-screen').classList.remove('active');
@@ -481,10 +551,42 @@
             resetGameData(); initCircles(); if (!anim) loop();
         };
 
+        let unsubscribeLogs = null;
         window.showLog = () => {
             document.getElementById('start-screen').classList.remove('active');
             document.getElementById('log-screen').classList.add('active');
-            listenToLogs();
+            
+            const listEl = document.getElementById('log-list');
+            if (!db || !currentUser) {
+                listEl.innerHTML = '<p class="text-slate-500 text-center py-8">接続エラー</p>';
+                return;
+            }
+            if (unsubscribeLogs) unsubscribeLogs();
+            const logCol = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
+            unsubscribeLogs = onSnapshot(logCol, (snap) => {
+                // 安全対策: localTime(クライアント時間)を含めてソートし、オンライン遅延による順番のブレを防ぐ
+                const logs = snap.docs.map(d => d.data()).sort((a, b) => {
+                    const timeA = a.localTime || (a.timestamp?.seconds * 1000) || 0;
+                    const timeB = b.localTime || (b.timestamp?.seconds * 1000) || 0;
+                    return timeB - timeA;
+                });
+
+                if (logs.length === 0) { listEl.innerHTML = '<p class="text-slate-500 text-center py-8">記録なし</p>'; return; }
+                
+                listEl.innerHTML = logs.map(l => {
+                    const styleInfo = getRewardColorClass(l.reward || 0);
+                    const formattedReward = `${(l.reward || 0).toLocaleString()}円`;
+                    
+                    return `
+                    <div class="log-item">
+                        <div>
+                            <div class="text-[10px] text-slate-400">${l.date} ${l.time}</div>
+                            <div class="text-xs text-indigo-400 font-black">CLEARED</div>
+                        </div>
+                        <div class="text-2xl font-black italic ${styleInfo.class}">${formattedReward}</div>
+                    </div>`;
+                }).join('');
+            });
         };
 
         window.backToStartFromLog = () => {
@@ -497,6 +599,14 @@
             isStarted = false;
             document.getElementById('clear-screen').classList.remove('active');
             document.getElementById('start-screen').classList.add('active');
+            
+            // UIリセット
+            document.getElementById('double-up-actions').classList.remove('hidden');
+            document.getElementById('double-up-presentation').classList.add('hidden');
+            document.getElementById('double-up-roulette').classList.add('hidden');
+            document.getElementById('double-up-result').classList.add('hidden');
+            document.getElementById('double-up-result').classList.add('opacity-0');
+            
             initStartBg();
         };
 
@@ -504,7 +614,7 @@
             circles.forEach(c => c.el.remove()); circles = [];
             count = Math.floor(Math.random() * 10) + 1;
             for (let i = 0; i < count; i++) circles.push(new Circle(document.getElementById('canvas')));
-            generateNumpad(); // 丸が再生成されるたびにテンキーも再生成（シャッフル）する
+            generateNumpad(); 
         }
 
         function loop() {
@@ -514,12 +624,20 @@
         }
 
         window.check = (num) => {
+            // 安全対策: クリア処理中などにボタンを押せないようにする
+            if (!isStarted) return; 
+            
             initAudio(); 
             if (num === count) {
                 playSound('correct');
                 score++; combo++; if (combo > maxCombo) maxCombo = combo;
                 updateComboEffect(); showFeedback('○', 'text-blue-400'); updateUI();
-                if (score >= TARGET) { setTimeout(prepareTreasure, 500); return; }
+                if (score >= TARGET) { 
+                    // 5000到達時に操作をロックして連打バグを防ぐ
+                    isStarted = false; 
+                    setTimeout(prepareTreasure, 500); 
+                    return; 
+                }
             } else {
                 playSound('wrong');
                 score = Math.max(0, score - 1); combo = 0;
@@ -527,9 +645,8 @@
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
                 showFeedback('×', 'text-rose-500'); updateUI();
 
-                // 画面を揺らす演出
                 document.body.classList.remove('shake');
-                void document.body.offsetWidth; // 連続で間違えた時のためにリフローを強制
+                void document.body.offsetWidth;
                 document.body.classList.add('shake');
             }
             initCircles();
@@ -584,6 +701,13 @@
             document.getElementById('remaining').innerText = `残り ${Math.max(0, TARGET - score).toLocaleString()}`;
         }
 
+        function updateRewardDisplay(elId, amount) {
+            const el = document.getElementById(elId);
+            const styleInfo = getRewardColorClass(amount);
+            el.innerText = `${amount.toLocaleString()}円`;
+            el.className = `text-3xl transition-all duration-500 ${styleInfo.class} ${styleInfo.shadow}`;
+        }
+
         function prepareTreasure() {
             isStarted = false; isChestOpened = false;
             document.getElementById('game-screen').classList.remove('active');
@@ -596,48 +720,177 @@
             chestValues = array;
         }
 
-        let unsubscribeLogs = null;
-        function listenToLogs() {
-            const listEl = document.getElementById('log-list');
-            if (!db || !currentUser) {
-                listEl.innerHTML = '<p class="text-slate-500 text-center py-8">接続エラー</p>';
-                return;
-            }
-            if (unsubscribeLogs) unsubscribeLogs();
-            const logCol = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
-            unsubscribeLogs = onSnapshot(logCol, (snap) => {
-                const logs = snap.docs.map(d => d.data()).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                if (logs.length === 0) { listEl.innerHTML = '<p class="text-slate-500 text-center py-8">記録なし</p>'; return; }
-                listEl.innerHTML = logs.map(l => {
-                    let colorClass = 'text-white';
-                    if (l.reward === 1500) colorClass = 'text-blue-500';
-                    else if (l.reward === 2500) colorClass = 'text-emerald-500';
-                    else if (l.reward === 3500) colorClass = 'text-rose-500';
-                    return `<div class="log-item"><div><div class="text-[10px] text-slate-400">${l.date} ${l.time}</div><div class="text-xs text-indigo-400 font-black">CLEARED</div></div><div class="text-2xl font-black italic ${colorClass}">${l.reward?.toLocaleString()}円</div></div>`;
-                }).join('');
-            });
-        }
-
         window.openChest = (index) => {
             if (isChestOpened) return;
             isChestOpened = true; playSound('combo');
-            const reward = chestValues[index];
+            currentReward = chestValues[index];
+            
+            updateRewardDisplay('current-reward-text', currentReward);
+            
+            // 画面初期化
+            document.getElementById('double-up-actions').classList.remove('hidden');
+            document.getElementById('double-up-presentation').classList.add('hidden');
+            document.getElementById('double-up-roulette').classList.add('hidden');
+            document.getElementById('double-up-result').classList.add('hidden');
+            document.getElementById('double-up-result').classList.add('opacity-0');
+            
+            // 煽りテキストリセット
+            const statusText = document.getElementById('roulette-status-text');
+            if(statusText) {
+                statusText.innerText = "抽選中...";
+                statusText.className = "text-slate-400 font-bold mb-4 animate-pulse text-lg";
+            }
+            
+            document.getElementById('treasure-screen').classList.remove('active');
+            document.getElementById('double-up-screen').classList.add('active');
+        };
+
+        // === 動的ルーレット演出 ===
+        window.playDoubleUp = () => {
+            playSound('tick');
+            document.getElementById('double-up-actions').classList.add('hidden');
+            
+            // 演出エリアを表示
+            document.getElementById('double-up-presentation').classList.remove('hidden');
+            document.getElementById('double-up-roulette').classList.remove('hidden');
+            document.getElementById('double-up-roulette').classList.add('flex');
+            
+            const rBox = document.getElementById('roulette-box');
+            const rText = document.getElementById('roulette-text');
+            const statusText = document.getElementById('roulette-status-text');
+            
+            let ticks = 0;
+            const maxTicks = 35; 
+            let delay = 60; 
+            
+            const isWin = Math.random() < 0.5;
+
+            function runRoulette() {
+                ticks++;
+                playSound('tick');
+
+                if (ticks % 2 === 0) {
+                    rBox.className = "w-full bg-rose-900/40 border-4 border-rose-500 rounded-2xl p-8 text-center shadow-[0_0_15px_rgba(244,63,94,0.5)]";
+                    rText.innerText = "成功！？";
+                    rText.className = "text-5xl font-black text-rose-400";
+                } else {
+                    rBox.className = "w-full bg-blue-900/40 border-4 border-blue-500 rounded-2xl p-8 text-center shadow-[0_0_15px_rgba(59,130,246,0.5)]";
+                    rText.innerText = "失敗！？";
+                    rText.className = "text-5xl font-black text-blue-400";
+                }
+
+                if (ticks === 15) {
+                    statusText.innerText = "まだまだ！";
+                    statusText.className = "text-yellow-400 font-bold mb-4 animate-pulse text-xl";
+                }
+                if (ticks === 25) {
+                    statusText.innerText = "どっちだ！？";
+                    statusText.className = "text-orange-500 font-black mb-4 animate-bounce text-2xl";
+                }
+                if (ticks === 32) {
+                    statusText.innerText = "決まるぞ！！！";
+                    statusText.className = "text-rose-500 font-black mb-4 animate-ping text-3xl";
+                }
+
+                if (ticks > 25) {
+                    delay += 30;
+                }
+
+                if (ticks >= maxTicks) {
+                    showDoubleUpResult(isWin);
+                } else {
+                    setTimeout(runRoulette, delay);
+                }
+            }
+            
+            setTimeout(runRoulette, delay);
+        };
+
+        function showDoubleUpResult(isWin) {
+            const resEl = document.getElementById('double-up-result');
+            const resText = document.getElementById('double-up-result-text');
+            
+            document.getElementById('double-up-roulette').classList.add('hidden');
+            document.getElementById('double-up-roulette').classList.remove('flex');
+            resEl.classList.remove('hidden');
+            resEl.classList.add('flex');
+            
+            setTimeout(() => {
+                resEl.classList.remove('opacity-0');
+            }, 50);
+            
+            if (isWin) {
+                playSound('correct');
+                currentReward *= 2;
+                resText.innerText = "成功！！";
+                resText.className = "text-6xl sm:text-7xl font-black text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,1)] transform scale-110 transition-transform duration-500";
+                
+                setTimeout(() => {
+                    updateRewardDisplay('current-reward-text', currentReward);
+                    
+                    setTimeout(() => {
+                        resEl.classList.add('opacity-0');
+                        setTimeout(() => finishGame(), 300);
+                    }, 2500);
+                }, 2000); 
+            } else {
+                playSound('wrong');
+                currentReward = 0;
+                resText.innerText = "失敗...";
+                resText.className = "text-6xl sm:text-7xl font-black text-slate-500 drop-shadow-[0_0_20px_rgba(100,116,139,1)] transform scale-100 transition-transform duration-500";
+                
+                document.body.classList.remove('shake');
+                void document.body.offsetWidth;
+                document.body.classList.add('shake');
+
+                setTimeout(() => {
+                    updateRewardDisplay('current-reward-text', currentReward);
+                    
+                    setTimeout(() => {
+                        resEl.classList.add('opacity-0');
+                        setTimeout(() => finishGame(), 300);
+                    }, 2500); 
+                }, 2000);
+            }
+        }
+
+        window.declineDoubleUp = () => {
+            finishGame();
+        };
+
+        function finishGame() {
             const bonusTextEl = document.getElementById('bonus-value-text');
-            bonusTextEl.innerText = `${reward.toLocaleString()}円`;
-            if (reward === 1500) bonusTextEl.style.color = '#3b82f6'; 
-            else if (reward === 2500) bonusTextEl.style.color = '#10b981'; 
-            else if (reward === 3500) bonusTextEl.style.color = '#ef4444';
+            const styleInfo = getRewardColorClass(currentReward);
+            
+            bonusTextEl.innerText = `${currentReward.toLocaleString()}円`;
+            
+            if (currentReward === 0) {
+                bonusTextEl.className = "text-5xl font-black italic tracking-tighter mb-4 text-slate-500";
+            } else {
+                bonusTextEl.className = `text-6xl italic tracking-tighter mb-4 transition-all duration-1000 ${styleInfo.class} ${styleInfo.shadow}`;
+            }
+
             const now = new Date();
             const dateStr = now.getFullYear() + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + ('0' + now.getDate()).slice(-2);
-            const timeStr = ('0' +getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
+            const timeStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
             document.getElementById('timestamp').innerText = `${dateStr} ${timeStr}`;
-            document.getElementById('treasure-screen').classList.remove('active');
+            
+            document.getElementById('double-up-screen').classList.remove('active');
             document.getElementById('clear-screen').classList.add('active');
+
+            // --- Firebase共有ログへ保存 ---
             if (db && currentUser) {
                 const logCol = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
-                addDoc(logCol, { date: dateStr, time: timeStr, reward: reward, timestamp: serverTimestamp() }).catch(e => console.error(e));
+                // 安全対策: ローカル時間を追加し、サーバー遅延時でも正しくソートできるようにする
+                addDoc(logCol, { 
+                    date: dateStr, 
+                    time: timeStr, 
+                    reward: currentReward, 
+                    timestamp: serverTimestamp(),
+                    localTime: Date.now() 
+                }).catch(e => console.error(e));
             }
-        };
+        }
 
         function resetGameData() { score = 0; combo = 0; maxCombo = 0; updateUI(); resetComboEffect(); }
         let bgCircles = [];
