@@ -8,23 +8,68 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;900&display=swap');
         
-        :root {
-            --primary: #3b82f6;
-            --bg: #0f172a;
+        /* 統合テーマカラーの定義 */
+        :root, [data-theme="standard"] {
+            --bg-main: #0f172a;
+            --bg-screen: #020617;
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --accent: #818cf8;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --panel-bg: rgba(30, 41, 59, 0.8);
+            --numpad-bg: rgba(0, 0, 0, 0.4);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        [data-theme="cyber"] {
+            --bg-main: #1a0b2e;
+            --bg-screen: #0f0518;
+            --primary: #c026d3;
+            --primary-light: #d946ef;
+            --accent: #22d3ee;
+            --text-main: #ffffff;
+            --text-muted: #a78bfa;
+            --panel-bg: rgba(46, 16, 101, 0.8);
+            --numpad-bg: rgba(0, 0, 0, 0.5);
+            --border-color: rgba(255, 255, 255, 0.15);
+        }
+        [data-theme="magma"] {
+            --bg-main: #2a0a0a;
+            --bg-screen: #1a0505;
+            --primary: #dc2626;
+            --primary-light: #ef4444;
+            --accent: #fb923c;
+            --text-main: #ffffff;
+            --text-muted: #fca5a5;
+            --panel-bg: rgba(69, 10, 10, 0.8);
+            --numpad-bg: rgba(0, 0, 0, 0.6);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        [data-theme="light"] {
+            --bg-main: #f8fafc;
+            --bg-screen: #f1f5f9;
+            --primary: #0ea5e9;
+            --primary-light: #38bdf8;
+            --accent: #6366f1;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --numpad-bg: rgba(226, 232, 240, 0.7);
+            --border-color: rgba(0, 0, 0, 0.08);
         }
 
         body {
             font-family: 'M PLUS Rounded 1c', sans-serif;
-            background-color: var(--bg);
-            color: white;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             margin: 0;
             padding: 0;
             height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            /* ゲーム中の引っ張り更新などを防止 */
             touch-action: none;
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
 
         .screen {
@@ -43,13 +88,15 @@
             position: absolute;
             inset: 0;
             z-index: -1;
-            background-color: #020617;
+            background-color: var(--bg-screen);
+            transition: background-color 0.5s ease;
         }
 
         .status-section {
             padding: 1rem 1.25rem;
-            background: rgba(30, 41, 59, 0.8);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.5s ease, border-color 0.5s ease;
         }
 
         .canvas-container {
@@ -57,7 +104,8 @@
             flex-grow: 1;
             width: 100%;
             overflow: hidden;
-            background-color: #020617;
+            background-color: var(--bg-screen);
+            transition: background-color 0.5s ease;
         }
 
         .game-circle {
@@ -68,7 +116,8 @@
             justify-content: center;
             will-change: transform;
             opacity: 0.9;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid var(--border-color);
+            transition: border-color 0.5s ease;
         }
 
         .numpad {
@@ -76,8 +125,9 @@
             grid-template-columns: repeat(5, 1fr);
             gap: 10px;
             padding: 16px;
-            background: #1e293b;
+            background: var(--numpad-bg);
             padding-bottom: env(safe-area-inset-bottom, 16px);
+            transition: background-color 0.5s ease;
         }
 
         .num-btn {
@@ -88,19 +138,18 @@
             font-size: 1.4rem;
             font-weight: 900;
             border-radius: 12px;
-            background: #3b82f6;
-            color: white;
-            box-shadow: 0 4px 0 #1d4ed8;
+            background: var(--primary-light);
+            color: white; /* ボタンの文字色は常に白で固定 */
+            box-shadow: 0 4px 0 var(--primary);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
-            /* 連打時の画面ズーム防止対策 */
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
 
         .num-btn:active {
             transform: translateY(2px);
-            box-shadow: 0 2px 0 currentColor;
+            box-shadow: 0 2px 0 currentColor !important;
             opacity: 0.9;
         }
 
@@ -111,6 +160,7 @@
             transform: scale(0.5) rotate(-15deg);
             transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             line-height: 1;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .combo-count.pop {
@@ -148,6 +198,7 @@
             opacity: 0;
             z-index: 30;
             text-align: center;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
         @keyframes pop-in {
@@ -163,11 +214,24 @@
             content: "";
             position: absolute;
             top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
             transform: rotate(45deg);
             animation: shine 3s infinite;
         }
         @keyframes shine { 0% { left: -100%; } 20% { left: 100%; } 100% { left: 100%; } }
+
+        .theme-btn {
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .theme-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+        }
 
         .chest {
             cursor: pointer;
@@ -176,7 +240,7 @@
         }
         .chest:hover { transform: scale(1.1); }
         .chest:active { transform: scale(0.9); }
-        .chest-svg { width: 100px; height: 100px; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.4)); }
+        .chest-svg { width: 100px; height: 100px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
 
         .shake {
             animation: shake-anim 0.3s cubic-bezier(.36,.07,.19,.97) both;
@@ -194,12 +258,11 @@
             overflow-y: auto;
             width: 100%;
             padding-right: 8px;
-            /* スクロール制限を解除（これがないとスマホでログが見れない） */
             touch-action: pan-y;
         }
         .log-item {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
             margin-bottom: 8px;
             padding: 12px;
             border-radius: 16px;
@@ -210,7 +273,7 @@
 
         .loader {
             width: 20px; height: 20px;
-            border: 3px solid #FFF; border-bottom-color: transparent; border-radius: 50%;
+            border: 3px solid var(--text-muted); border-bottom-color: transparent; border-radius: 50%;
             display: inline-block; animation: rotation 1s linear infinite;
         }
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -223,9 +286,7 @@
         .admin-hitbox-left { left: 0; }
         .admin-hitbox-right { right: 0; }
 
-        .title-nowrap {
-            white-space: nowrap;
-        }
+        .title-nowrap { white-space: nowrap; }
         
         .presentation-area {
             min-height: 200px;
@@ -241,18 +302,30 @@
     <div id="start-screen" class="screen active items-center justify-center p-8">
         <div id="start-bg"></div>
         <div class="z-20 text-center flex flex-col items-center max-w-sm w-full">
-            <p class="text-red-600 font-black text-3xl mb-6 animate-bounce tracking-tighter">
+            <p class="text-red-600 font-black text-3xl mb-4 animate-bounce tracking-tighter">
                 準備はいいか！塚田淳！
             </p>
-            <h1 class="text-4xl font-black mb-12 tracking-tighter text-white text-center leading-tight text-shadow-lg">
-                サークルカウント<br><span class="text-indigo-400 text-5xl">ゲーム</span>
+            <h1 class="text-4xl font-black mb-8 tracking-tighter text-[var(--text-main)] text-center leading-tight drop-shadow-md transition-colors duration-500">
+                サークルカウント<br><span class="text-[var(--accent)] text-5xl">ゲーム</span>
             </h1>
+
+            <!-- テーマ選択UI -->
+            <div class="mb-8 w-full">
+                <p class="text-[12px] text-[var(--text-muted)] font-bold mb-3 uppercase tracking-widest text-center transition-colors">テーマカラーを選ぼう！</p>
+                <div class="flex justify-center gap-3">
+                    <button id="theme-standard" onclick="setTheme('standard')" class="theme-btn w-11 h-11 rounded-full bg-blue-500 border-4 border-white scale-110 shadow-[0_0_15px_rgba(59,130,246,0.6)] transition-all opacity-100"></button>
+                    <button id="theme-cyber" onclick="setTheme('cyber')" class="theme-btn w-11 h-11 rounded-full bg-fuchsia-500 border-4 border-transparent scale-100 opacity-50 transition-all"></button>
+                    <button id="theme-magma" onclick="setTheme('magma')" class="theme-btn w-11 h-11 rounded-full bg-red-500 border-4 border-transparent scale-100 opacity-50 transition-all"></button>
+                    <!-- 白（ライト）テーマ追加 -->
+                    <button id="theme-light" onclick="setTheme('light')" class="theme-btn w-11 h-11 rounded-full bg-slate-100 border-4 border-transparent scale-100 opacity-50 transition-all"></button>
+                </div>
+            </div>
             
-            <button onclick="startGame()" class="btn-shine w-full bg-blue-600 text-white py-5 rounded-3xl font-black text-2xl shadow-2xl active:scale-95 transition-transform mb-4">
+            <button onclick="startGame()" class="btn-shine w-full bg-[var(--primary)] text-white py-5 rounded-3xl font-black text-2xl shadow-xl active:scale-95 transition-transform mb-4">
                 チャレンジスタート
             </button>
 
-            <button onclick="showLog()" class="w-full bg-slate-700/50 text-slate-300 py-3 rounded-2xl font-bold text-lg border border-white/10 active:scale-95 transition">
+            <button onclick="showLog()" class="w-full bg-[var(--panel-bg)] text-[var(--text-muted)] py-3 rounded-2xl font-bold text-lg border border-[var(--border-color)] shadow-sm active:scale-95 transition">
                 <span>ログを見る（共有）</span>
             </button>
         </div>
@@ -262,21 +335,21 @@
         <div class="status-section">
             <div class="flex justify-between items-end mb-3">
                 <div>
-                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">スコア</div>
-                    <div id="score-text" class="text-4xl font-black text-white leading-none">0</div>
+                    <div class="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">スコア</div>
+                    <div id="score-text" class="text-4xl font-black text-[var(--text-main)] leading-none">0</div>
                 </div>
                 <div class="text-right">
-                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">最高コンボ</div>
-                    <div id="best-combo" class="text-xl font-bold text-amber-400 leading-none">0</div>
+                    <div class="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">最高コンボ</div>
+                    <div id="best-combo" class="text-xl font-bold text-amber-500 leading-none drop-shadow-sm">0</div>
                 </div>
             </div>
             <div class="space-y-1">
-                <div class="flex justify-between text-[10px] font-black text-slate-300">
+                <div class="flex justify-between text-[10px] font-black text-[var(--text-muted)]">
                     <span id="percent">達成率 0%</span>
                     <span id="remaining">クリアーまで残り 5,000</span>
                 </div>
-                <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
-                    <div id="progress-bar" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>
+                <div class="w-full bg-slate-300/30 h-2 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-[var(--primary-light)] transition-all duration-300" style="width: 0%"></div>
                 </div>
             </div>
         </div>
@@ -284,17 +357,17 @@
             <div id="flash" class="flash-overlay"></div>
             <div class="absolute top-5 right-5 text-right pointer-events-none z-40">
                 <div id="combo-count" class="combo-count">0</div>
-                <div id="combo-label" class="text-lg font-black hidden">COMBO</div>
+                <div id="combo-label" class="text-lg font-black hidden drop-shadow-sm">COMBO</div>
             </div>
             <div id="feedback" class="feedback-pop"></div>
         </div>
         <div class="numpad" id="numpad"></div>
     </div>
 
-    <div id="treasure-screen" class="screen items-center justify-center p-8 bg-slate-900 bg-opacity-95">
+    <div id="treasure-screen" class="screen items-center justify-center p-8 bg-[var(--bg-main)] bg-opacity-95">
         <div class="text-center w-full">
-            <h2 class="text-3xl font-black text-yellow-400 mb-2 text-shadow-lg">チャレンジ達成!!</h2>
-            <p class="text-white text-lg mb-12 font-bold italic">運命の報酬を選べ、塚田淳！</p>
+            <h2 class="text-3xl font-black text-yellow-500 mb-2 drop-shadow-md">チャレンジ達成!!</h2>
+            <p class="text-[var(--text-main)] text-lg mb-12 font-bold italic">運命の報酬を選べ、塚田淳！</p>
             <div class="flex justify-around items-center w-full max-w-md gap-4 mx-auto">
                 <div class="chest" onclick="openChest(0)">
                     <svg class="chest-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -302,7 +375,7 @@
                         <path d="M2 10C2 7 5 5 12 5C19 5 22 7 22 10" fill="#A0522D" stroke="#FBBF24" stroke-width="1.5"/>
                         <rect x="10" y="9" width="4" height="3" rx="1" fill="#FBBF24"/>
                     </svg>
-                    <p class="mt-2 text-[10px] font-bold text-yellow-400 uppercase tracking-widest">宝箱 A</p>
+                    <p class="mt-2 text-[10px] font-bold text-yellow-500 uppercase tracking-widest drop-shadow-sm">宝箱 A</p>
                 </div>
                 <div class="chest" onclick="openChest(1)">
                     <svg class="chest-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -310,7 +383,7 @@
                         <path d="M2 10C2 7 5 5 12 5C19 5 22 7 22 10" fill="#A0522D" stroke="#FBBF24" stroke-width="1.5"/>
                         <rect x="10" y="9" width="4" height="3" rx="1" fill="#FBBF24"/>
                     </svg>
-                    <p class="mt-2 text-[10px] font-bold text-yellow-400 uppercase tracking-widest">宝箱 B</p>
+                    <p class="mt-2 text-[10px] font-bold text-yellow-500 uppercase tracking-widest drop-shadow-sm">宝箱 B</p>
                 </div>
                 <div class="chest" onclick="openChest(2)">
                     <svg class="chest-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -318,35 +391,34 @@
                         <path d="M2 10C2 7 5 5 12 5C19 5 22 7 22 10" fill="#A0522D" stroke="#FBBF24" stroke-width="1.5"/>
                         <rect x="10" y="9" width="4" height="3" rx="1" fill="#FBBF24"/>
                     </svg>
-                    <p class="mt-2 text-[10px] font-bold text-yellow-400 uppercase tracking-widest">宝箱 C</p>
+                    <p class="mt-2 text-[10px] font-bold text-yellow-500 uppercase tracking-widest drop-shadow-sm">宝箱 C</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- ダブルアップチャレンジ画面 -->
-    <div id="double-up-screen" class="screen items-center justify-center p-8 bg-slate-900 bg-opacity-95">
+    <div id="double-up-screen" class="screen items-center justify-center p-8 bg-[var(--bg-main)] bg-opacity-95">
         <div class="text-center w-full">
             <p class="text-red-600 font-black text-2xl sm:text-3xl mb-4 animate-bounce tracking-tighter">準備はいいか！塚田淳！</p>
-            <h2 class="text-3xl sm:text-4xl font-black text-rose-500 mb-2 text-shadow-lg animate-pulse tracking-tighter title-nowrap">ダブルアップチャレンジ</h2>
-            <p class="text-slate-300 text-lg mb-8 font-bold italic">現在の報酬: <span id="current-reward-text" class="text-3xl text-blue-400 drop-shadow-md">0円</span></p>
+            <h2 class="text-3xl sm:text-4xl font-black text-rose-500 mb-2 drop-shadow-md animate-pulse tracking-tighter title-nowrap">ダブルアップチャレンジ</h2>
+            <p class="text-[var(--text-muted)] text-lg mb-8 font-bold italic">現在の報酬: <span id="current-reward-text" class="text-3xl text-blue-500 drop-shadow-md">0円</span></p>
 
             <div id="double-up-actions" class="flex flex-col gap-4 w-full max-w-sm mx-auto">
-                <div class="bg-slate-800/80 border border-slate-600 rounded-xl p-3 mb-2 shadow-lg">
-                    <p class="text-cyan-400 font-black text-xl mb-1 tracking-wider">勝率 50%</p>
-                    <p class="text-slate-300 text-sm">成功すれば報酬<span class="text-yellow-400 font-bold text-xl ml-1">2倍</span>！<br>失敗すれば<span class="text-rose-500 font-bold">すべて没収</span>。</p>
+                <div class="bg-[var(--panel-bg)] border border-[var(--border-color)] rounded-xl p-3 mb-2 shadow-lg">
+                    <p class="text-cyan-500 font-black text-xl mb-1 tracking-wider drop-shadow-sm">勝率 50%</p>
+                    <p class="text-[var(--text-muted)] text-sm">成功すれば報酬<span class="text-yellow-500 font-bold text-xl ml-1">2倍</span>！<br>失敗すれば<span class="text-rose-500 font-bold">すべて没収</span>。</p>
                 </div>
                 
-                <button onclick="playDoubleUp()" class="btn-shine w-full bg-rose-600 text-white py-4 rounded-3xl font-black text-2xl shadow-[0_0_20px_rgba(225,29,72,0.5)] active:scale-95 transition-transform">挑戦する</button>
-                <button onclick="declineDoubleUp()" class="w-full bg-slate-700/80 text-slate-300 py-3 rounded-2xl font-bold text-lg border border-white/10 active:scale-95 transition">やめておく (確定)</button>
+                <button onclick="playDoubleUp()" class="btn-shine w-full bg-rose-600 text-white py-4 rounded-3xl font-black text-2xl shadow-[0_4px_15px_rgba(225,29,72,0.4)] active:scale-95 transition-transform">挑戦する</button>
+                <button onclick="declineDoubleUp()" class="w-full bg-[var(--panel-bg)] border border-[var(--border-color)] text-[var(--text-muted)] py-3 rounded-2xl font-bold text-lg shadow-sm active:scale-95 transition">やめておく (確定)</button>
             </div>
 
-            <!-- 動的ルーレット演出・結果表示用コンテナ -->
             <div id="double-up-presentation" class="hidden w-full max-w-sm mx-auto presentation-area mt-4">
                 <div id="double-up-roulette" class="hidden w-full flex-col items-center justify-center">
-                    <p id="roulette-status-text" class="text-slate-400 font-bold mb-4 animate-pulse text-lg">抽選中...</p>
-                    <div id="roulette-box" class="w-full bg-slate-800 border-4 border-slate-600 rounded-2xl p-8 text-center transition-colors duration-75 shadow-2xl">
-                        <span id="roulette-text" class="text-5xl font-black text-white drop-shadow-md">運命</span>
+                    <p id="roulette-status-text" class="text-[var(--text-muted)] font-bold mb-4 animate-pulse text-lg">抽選中...</p>
+                    <div id="roulette-box" class="w-full bg-[var(--panel-bg)] border-4 border-[var(--border-color)] rounded-2xl p-8 text-center transition-colors duration-75 shadow-2xl">
+                        <span id="roulette-text" class="text-5xl font-black text-[var(--text-main)] drop-shadow-md">運命</span>
                     </div>
                 </div>
                 <div id="double-up-result" class="hidden w-full flex-col items-center justify-center opacity-0 transition-opacity duration-300">
@@ -356,34 +428,33 @@
         </div>
     </div>
 
-    <div id="clear-screen" class="screen items-center justify-center p-6 bg-slate-950">
-        <div class="text-7xl mb-4 animate-pulse">👑</div>
-        <h2 class="text-2xl font-black mb-6 text-indigo-400 uppercase tracking-tighter text-center">伝説達成</h2>
-        <div class="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 w-full max-w-xs mb-8 text-center relative overflow-hidden shadow-2xl">
-            <div id="timestamp" class="text-[10px] font-bold text-slate-500 mb-4 uppercase tracking-widest"></div>
-            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-2 italic">獲得報酬</p>
-            <p id="bonus-value-text" class="text-5xl font-black italic tracking-tighter mb-4 text-white drop-shadow-lg">0円</p>
-            <div class="border-t border-white/10 pt-4">
-                <p class="text-[10px] text-slate-400 font-bold tracking-wider italic">認定プレイヤー: <span class="text-white font-black">塚田淳</span></p>
+    <div id="clear-screen" class="screen items-center justify-center p-6 bg-[var(--bg-main)]">
+        <div class="text-7xl mb-4 animate-pulse drop-shadow-md">👑</div>
+        <h2 class="text-2xl font-black mb-6 text-[var(--accent)] uppercase tracking-tighter text-center drop-shadow-sm">伝説達成</h2>
+        <div class="bg-[var(--panel-bg)] border border-[var(--border-color)] rounded-[2.5rem] p-8 w-full max-w-xs mb-8 text-center relative overflow-hidden shadow-2xl">
+            <div id="timestamp" class="text-[10px] font-bold text-[var(--text-muted)] mb-4 uppercase tracking-widest"></div>
+            <p class="text-[var(--text-muted)] text-[10px] font-bold uppercase tracking-[0.2em] mb-2 italic">獲得報酬</p>
+            <p id="bonus-value-text" class="text-5xl font-black italic tracking-tighter mb-4 text-[var(--text-main)] drop-shadow-md">0円</p>
+            <div class="border-t border-[var(--border-color)] pt-4">
+                <p class="text-[10px] text-[var(--text-muted)] font-bold tracking-wider italic">認定プレイヤー: <span class="text-[var(--text-main)] font-black">塚田淳</span></p>
             </div>
         </div>
-        <p class="text-yellow-400 font-black mb-8 text-center text-xl animate-bounce">最高の記録だ、塚田淳！！</p>
-        <button onclick="backToStart()" class="w-full max-w-xs bg-indigo-600 py-5 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition">タイトルに戻る</button>
+        <p class="text-yellow-500 font-black mb-8 text-center text-xl animate-bounce drop-shadow-sm">最高の記録だ、塚田淳！！</p>
+        <button onclick="backToStart()" class="w-full max-w-xs bg-[var(--primary)] py-5 rounded-3xl font-black text-xl text-white shadow-xl active:scale-95 transition">タイトルに戻る</button>
     </div>
 
-    <!-- ログ画面（共有） -->
-    <div id="log-screen" class="screen items-center justify-center p-6 bg-slate-950">
+    <!-- ログ画面 -->
+    <div id="log-screen" class="screen items-center justify-center p-6 bg-[var(--bg-main)]">
         <div class="admin-hitbox admin-hitbox-left" onclick="handleAdminTap('left')"></div>
         <div class="admin-hitbox admin-hitbox-right" onclick="handleAdminTap('right')"></div>
         
-        <h2 class="text-2xl font-black mb-6 text-indigo-400 uppercase tracking-tighter text-center italic">共有：栄光の記録</h2>
+        <h2 class="text-2xl font-black mb-6 text-[var(--accent)] uppercase tracking-tighter text-center italic drop-shadow-sm">共有：栄光の記録</h2>
         <div id="log-list" class="log-container">
             <div class="flex justify-center py-10"><span class="loader"></span></div>
         </div>
-        <button onclick="backToStartFromLog()" class="mt-8 w-full max-w-xs bg-slate-700 py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition">戻る</button>
+        <button onclick="backToStartFromLog()" class="mt-8 w-full max-w-xs bg-[var(--panel-bg)] border border-[var(--border-color)] text-[var(--text-main)] py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition">戻る</button>
     </div>
 
-    <!-- ログ消去確認モーダル -->
     <div id="admin-confirm-modal" style="display: none;" class="fixed inset-0 bg-black/80 z-[200] items-center justify-center p-4">
         <div class="bg-slate-800 p-6 rounded-2xl w-full max-w-sm text-center border border-rose-500/50 shadow-2xl">
             <h3 class="text-xl font-black text-rose-500 mb-4">【管理者認証】</h3>
@@ -423,13 +494,61 @@
         let currentUser = null;
         if (auth) { onAuthStateChanged(auth, (user) => { currentUser = user; }); }
 
+        // === テーマ定義 ===
+        const THEMES = {
+            standard: {
+                colors: ['#FF6B6B', '#4D96FF', '#6BCB77', '#FFD93D', '#917FB3', '#FF87CA', '#00D7FF'],
+                baseCombo: { c: '#3b82f6', s: '#1d4ed8' }, // Blue
+                comboStages: [
+                    { limit: 40, c: '#ef4444', s: '#b91c1c' }, // Red
+                    { limit: 30, c: '#f97316', s: '#c2410c' }, // Orange
+                    { limit: 20, c: '#eab308', s: '#a16207' }, // Yellow
+                    { limit: 10, c: '#60a5fa', s: '#2563eb' }  // Light Blue
+                ]
+            },
+            cyber: {
+                colors: ['#FF00FF', '#00FFFF', '#39FF14', '#9D00FF', '#FF007F', '#00FF9D'],
+                baseCombo: { c: '#d946ef', s: '#a21caf' }, // Fuchsia
+                comboStages: [
+                    { limit: 40, c: '#22d3ee', s: '#0e7490' }, // Cyan
+                    { limit: 30, c: '#3b82f6', s: '#1d4ed8' }, // Blue
+                    { limit: 20, c: '#8b5cf6', s: '#5b21b6' }, // Violet
+                    { limit: 10, c: '#e879f9', s: '#c026d3' }  // Light Fuchsia
+                ]
+            },
+            magma: {
+                colors: ['#FF0000', '#FF4500', '#FF8C00', '#FFD700', '#8B0000', '#DC143C'],
+                baseCombo: { c: '#ef4444', s: '#b91c1c' }, // Red
+                comboStages: [
+                    { limit: 40, c: '#fef08a', s: '#ca8a04' }, // Yellow
+                    { limit: 30, c: '#fde047', s: '#a16207' }, // Darker Yellow
+                    { limit: 20, c: '#fb923c', s: '#c2410c' }, // Orange
+                    { limit: 10, c: '#f87171', s: '#dc2626' }  // Light Red
+                ]
+            },
+            light: {
+                colors: ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF', '#E8BAFF', '#A0E8AF'],
+                baseCombo: { c: '#0ea5e9', s: '#0369a1' }, // Sky
+                comboStages: [
+                    { limit: 40, c: '#e11d48', s: '#9f1239' }, // Rose
+                    { limit: 30, c: '#8b5cf6', s: '#5b21b6' }, // Violet
+                    { limit: 20, c: '#10b981', s: '#047857' }, // Emerald
+                    { limit: 10, c: '#3b82f6', s: '#1d4ed8' }  // Blue
+                ]
+            }
+        };
+
+        let currentTheme = 'standard';
+        let currentComboColor = THEMES[currentTheme].baseCombo.c;
+        let currentShadowColor = THEMES[currentTheme].baseCombo.s;
+
         // 正式版：目標5000
         const TARGET = 5000;
         let score = 0, combo = 0, maxCombo = 0, circles = [], count = 0, anim, isStarted = false, chestValues = [];
         let isChestOpened = false;
-        let currentComboColor = '#3b82f6', currentShadowColor = '#1d4ed8';
         let currentReward = 0; 
         
+        // 管理者モードタップ処理
         let leftTap = 0, lastTap = 0;
         window.handleAdminTap = (side) => {
             const now = Date.now();
@@ -452,22 +571,21 @@
             }
         };
 
-        // === 金額に応じた段階的な色の取得関数（6パターン完全個別指定） ===
         function getRewardColorClass(reward) {
-            if (reward === 0) return { class: 'text-slate-500', shadow: 'none' };
-            if (reward === 1500) return { class: 'text-blue-400', shadow: 'drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]' }; 
-            if (reward === 2500) return { class: 'text-emerald-400', shadow: 'drop-shadow-[0_0_10px_rgba(52,211,153,0.6)]' }; 
-            if (reward === 3000) return { class: 'text-fuchsia-400 font-black', shadow: 'drop-shadow-[0_0_12px_rgba(232,121,249,0.7)]' }; 
-            if (reward === 3500) return { class: 'text-cyan-400 font-black', shadow: 'drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]' }; 
-            if (reward === 5000) return { class: 'text-amber-400 font-black', shadow: 'drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]' }; 
-            if (reward === 7000) return { class: 'text-rose-500 font-black animate-pulse', shadow: 'drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]' }; 
-            return { class: 'text-white', shadow: 'none' };
+            // 背景白でも視認できるようにシャドウの透明度やベース色を調整しています
+            if (reward === 0) return { class: 'text-[var(--text-muted)]', shadow: 'none' };
+            if (reward === 1500) return { class: 'text-blue-500', shadow: 'drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]' }; 
+            if (reward === 2500) return { class: 'text-emerald-500', shadow: 'drop-shadow-[0_0_10px_rgba(16,185,129,0.6)]' }; 
+            if (reward === 3000) return { class: 'text-fuchsia-500 font-black', shadow: 'drop-shadow-[0_0_12px_rgba(217,70,239,0.6)]' }; 
+            if (reward === 3500) return { class: 'text-cyan-500 font-black', shadow: 'drop-shadow-[0_0_12px_rgba(6,182,212,0.6)]' }; 
+            if (reward === 5000) return { class: 'text-amber-500 font-black', shadow: 'drop-shadow-[0_0_15px_rgba(245,158,11,0.7)]' }; 
+            if (reward === 7000) return { class: 'text-rose-500 font-black animate-pulse', shadow: 'drop-shadow-[0_0_20px_rgba(225,29,72,0.8)]' }; 
+            return { class: 'text-[var(--text-main)]', shadow: 'none' };
         }
 
         let audioCtx;
         function initAudio() { 
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-            // iOS等のAutoplay制限回避のため明示的にresume
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
@@ -504,6 +622,41 @@
             }
         }
 
+        // === テーマ変更処理 ===
+        window.setTheme = (themeName) => {
+            currentTheme = themeName;
+            document.documentElement.setAttribute('data-theme', themeName);
+            
+            const themesInfo = {
+                standard: { shadow: 'rgba(59,130,246,0.6)', border: 'white' },
+                cyber: { shadow: 'rgba(217,70,239,0.6)', border: 'white' },
+                magma: { shadow: 'rgba(239,68,68,0.6)', border: 'white' },
+                light: { shadow: 'rgba(14,165,233,0.5)', border: '#0f172a' }
+            };
+            
+            // ボタンのUI更新
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                const tName = btn.id.replace('theme-', '');
+                if (tName === themeName) {
+                    btn.classList.remove('border-transparent', 'scale-100', 'opacity-50');
+                    btn.classList.add('scale-110', 'opacity-100');
+                    btn.style.borderColor = themesInfo[tName].border;
+                    btn.style.boxShadow = `0 0 15px ${themesInfo[tName].shadow}`;
+                } else {
+                    btn.classList.add('border-transparent', 'scale-100', 'opacity-50');
+                    btn.classList.remove('scale-110', 'opacity-100');
+                    btn.style.borderColor = 'transparent';
+                    btn.style.boxShadow = 'none';
+                }
+            });
+
+            // コンボ色リセットと背景再描画
+            resetComboEffect();
+            if (!isStarted) {
+                initStartBg();
+            }
+        };
+
         function generateNumpad() {
             const pad = document.getElementById('numpad');
             pad.innerHTML = '';
@@ -523,12 +676,15 @@
             }
         }
 
-        const COLORS = ['#FF6B6B', '#4D96FF', '#6BCB77', '#FFD93D', '#917FB3', '#FF87CA', '#00D7FF'];
         class Circle {
             constructor(parent) {
                 this.parent = parent; this.size = 40 + Math.random() * 40; this.el = document.createElement('div');
                 this.el.className = 'game-circle'; this.el.style.width = `${this.size}px`; this.el.style.height = `${this.size}px`;
-                this.el.style.backgroundColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+                
+                // テーマに応じた色を選択
+                const colors = THEMES[currentTheme].colors;
+                this.el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
                 this.x = Math.random() * (parent.clientWidth - this.size); this.y = Math.random() * (parent.clientHeight - this.size);
                 const spd = isStarted ? 1.0 : 0.6; this.dx = (Math.random() - 0.5) * spd * 4; this.dy = (Math.random() - 0.5) * spd * 4;
                 parent.appendChild(this.el);
@@ -564,14 +720,13 @@
             if (unsubscribeLogs) unsubscribeLogs();
             const logCol = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
             unsubscribeLogs = onSnapshot(logCol, (snap) => {
-                // 安全対策: localTime(クライアント時間)を含めてソートし、オンライン遅延による順番のブレを防ぐ
                 const logs = snap.docs.map(d => d.data()).sort((a, b) => {
                     const timeA = a.localTime || (a.timestamp?.seconds * 1000) || 0;
                     const timeB = b.localTime || (b.timestamp?.seconds * 1000) || 0;
                     return timeB - timeA;
                 });
 
-                if (logs.length === 0) { listEl.innerHTML = '<p class="text-slate-500 text-center py-8">記録なし</p>'; return; }
+                if (logs.length === 0) { listEl.innerHTML = '<p class="text-[var(--text-muted)] text-center py-8">記録なし</p>'; return; }
                 
                 listEl.innerHTML = logs.map(l => {
                     const styleInfo = getRewardColorClass(l.reward || 0);
@@ -580,10 +735,10 @@
                     return `
                     <div class="log-item">
                         <div>
-                            <div class="text-[10px] text-slate-400">${l.date} ${l.time}</div>
-                            <div class="text-xs text-indigo-400 font-black">CLEARED</div>
+                            <div class="text-[10px] text-[var(--text-muted)]">${l.date} ${l.time}</div>
+                            <div class="text-xs text-[var(--accent)] font-black drop-shadow-sm">CLEARED</div>
                         </div>
-                        <div class="text-2xl font-black italic ${styleInfo.class}">${formattedReward}</div>
+                        <div class="text-2xl font-black italic ${styleInfo.class} ${styleInfo.shadow}">${formattedReward}</div>
                     </div>`;
                 }).join('');
             });
@@ -600,7 +755,6 @@
             document.getElementById('clear-screen').classList.remove('active');
             document.getElementById('start-screen').classList.add('active');
             
-            // UIリセット
             document.getElementById('double-up-actions').classList.remove('hidden');
             document.getElementById('double-up-presentation').classList.add('hidden');
             document.getElementById('double-up-roulette').classList.add('hidden');
@@ -624,16 +778,14 @@
         }
 
         window.check = (num) => {
-            // 安全対策: クリア処理中などにボタンを押せないようにする
             if (!isStarted) return; 
             
             initAudio(); 
             if (num === count) {
                 playSound('correct');
                 score++; combo++; if (combo > maxCombo) maxCombo = combo;
-                updateComboEffect(); showFeedback('○', 'text-blue-400'); updateUI();
+                updateComboEffect(); showFeedback('○', 'text-[var(--accent)]'); updateUI();
                 if (score >= TARGET) { 
-                    // 5000到達時に操作をロックして連打バグを防ぐ
                     isStarted = false; 
                     setTimeout(prepareTreasure, 500); 
                     return; 
@@ -657,11 +809,18 @@
                 const countEl = document.getElementById('combo-count');
                 const labelEl = document.getElementById('combo-label');
                 countEl.innerText = combo; labelEl.classList.remove('hidden');
-                let nc = '#3b82f6', ns = '#1d4ed8';
-                if (combo > 40) { nc = '#ef4444'; ns = '#b91c1c'; }
-                else if (combo > 30) { nc = '#f97316'; ns = '#c2410c'; }
-                else if (combo > 20) { nc = '#eab308'; ns = '#a16207'; }
-                else if (combo > 10) { nc = '#60a5fa'; ns = '#2563eb'; }
+                
+                const theme = THEMES[currentTheme];
+                let nc = theme.baseCombo.c, ns = theme.baseCombo.s;
+                
+                // コンボ数に応じて色を昇格
+                for (let stage of theme.comboStages) {
+                    if (combo > stage.limit) {
+                        nc = stage.c; ns = stage.s;
+                        break;
+                    }
+                }
+
                 if (nc !== currentComboColor) {
                     playSound('combo'); if (navigator.vibrate) navigator.vibrate(300);
                     currentComboColor = nc; currentShadowColor = ns;
@@ -680,9 +839,14 @@
             const countEl = document.getElementById('combo-count');
             const labelEl = document.getElementById('combo-label');
             countEl.classList.remove('pop'); labelEl.classList.add('hidden');
-            currentComboColor = '#3b82f6'; currentShadowColor = '#1d4ed8';
+            
+            const theme = THEMES[currentTheme];
+            currentComboColor = theme.baseCombo.c; 
+            currentShadowColor = theme.baseCombo.s;
+            
             document.querySelectorAll('.num-btn').forEach(btn => {
-                btn.style.backgroundColor = '#3b82f6'; btn.style.boxShadow = `0 4px 0 #1d4ed8`;
+                btn.style.backgroundColor = currentComboColor; 
+                btn.style.boxShadow = `0 4px 0 ${currentShadowColor}`;
             });
         }
 
@@ -727,30 +891,25 @@
             
             updateRewardDisplay('current-reward-text', currentReward);
             
-            // 画面初期化
             document.getElementById('double-up-actions').classList.remove('hidden');
             document.getElementById('double-up-presentation').classList.add('hidden');
             document.getElementById('double-up-roulette').classList.add('hidden');
             document.getElementById('double-up-result').classList.add('hidden');
             document.getElementById('double-up-result').classList.add('opacity-0');
             
-            // 煽りテキストリセット
             const statusText = document.getElementById('roulette-status-text');
             if(statusText) {
                 statusText.innerText = "抽選中...";
-                statusText.className = "text-slate-400 font-bold mb-4 animate-pulse text-lg";
+                statusText.className = "text-[var(--text-muted)] font-bold mb-4 animate-pulse text-lg";
             }
             
             document.getElementById('treasure-screen').classList.remove('active');
             document.getElementById('double-up-screen').classList.add('active');
         };
 
-        // === 動的ルーレット演出 ===
         window.playDoubleUp = () => {
             playSound('tick');
             document.getElementById('double-up-actions').classList.add('hidden');
-            
-            // 演出エリアを表示
             document.getElementById('double-up-presentation').classList.remove('hidden');
             document.getElementById('double-up-roulette').classList.remove('hidden');
             document.getElementById('double-up-roulette').classList.add('flex');
@@ -762,7 +921,6 @@
             let ticks = 0;
             const maxTicks = 35; 
             let delay = 60; 
-            
             const isWin = Math.random() < 0.5;
 
             function runRoulette() {
@@ -770,39 +928,33 @@
                 playSound('tick');
 
                 if (ticks % 2 === 0) {
-                    rBox.className = "w-full bg-rose-900/40 border-4 border-rose-500 rounded-2xl p-8 text-center shadow-[0_0_15px_rgba(244,63,94,0.5)]";
+                    rBox.className = "w-full bg-rose-50 border-4 border-rose-400 rounded-2xl p-8 text-center shadow-[0_4px_15px_rgba(244,63,94,0.3)]";
                     rText.innerText = "成功！？";
-                    rText.className = "text-5xl font-black text-rose-400";
+                    rText.className = "text-5xl font-black text-rose-500 drop-shadow-md";
                 } else {
-                    rBox.className = "w-full bg-blue-900/40 border-4 border-blue-500 rounded-2xl p-8 text-center shadow-[0_0_15px_rgba(59,130,246,0.5)]";
+                    rBox.className = "w-full bg-blue-50 border-4 border-blue-400 rounded-2xl p-8 text-center shadow-[0_4px_15px_rgba(59,130,246,0.3)]";
                     rText.innerText = "失敗！？";
-                    rText.className = "text-5xl font-black text-blue-400";
+                    rText.className = "text-5xl font-black text-blue-500 drop-shadow-md";
                 }
 
                 if (ticks === 15) {
                     statusText.innerText = "まだまだ！";
-                    statusText.className = "text-yellow-400 font-bold mb-4 animate-pulse text-xl";
+                    statusText.className = "text-amber-500 font-bold mb-4 animate-pulse text-xl drop-shadow-sm";
                 }
                 if (ticks === 25) {
                     statusText.innerText = "どっちだ！？";
-                    statusText.className = "text-orange-500 font-black mb-4 animate-bounce text-2xl";
+                    statusText.className = "text-orange-500 font-black mb-4 animate-bounce text-2xl drop-shadow-sm";
                 }
                 if (ticks === 32) {
                     statusText.innerText = "決まるぞ！！！";
-                    statusText.className = "text-rose-500 font-black mb-4 animate-ping text-3xl";
+                    statusText.className = "text-rose-500 font-black mb-4 animate-ping text-3xl drop-shadow-sm";
                 }
 
-                if (ticks > 25) {
-                    delay += 30;
-                }
+                if (ticks > 25) delay += 30;
 
-                if (ticks >= maxTicks) {
-                    showDoubleUpResult(isWin);
-                } else {
-                    setTimeout(runRoulette, delay);
-                }
+                if (ticks >= maxTicks) showDoubleUpResult(isWin);
+                else setTimeout(runRoulette, delay);
             }
-            
             setTimeout(runRoulette, delay);
         };
 
@@ -815,19 +967,16 @@
             resEl.classList.remove('hidden');
             resEl.classList.add('flex');
             
-            setTimeout(() => {
-                resEl.classList.remove('opacity-0');
-            }, 50);
+            setTimeout(() => resEl.classList.remove('opacity-0'), 50);
             
             if (isWin) {
                 playSound('correct');
                 currentReward *= 2;
                 resText.innerText = "成功！！";
-                resText.className = "text-6xl sm:text-7xl font-black text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,1)] transform scale-110 transition-transform duration-500";
+                resText.className = "text-6xl sm:text-7xl font-black text-yellow-500 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] transform scale-110 transition-transform duration-500";
                 
                 setTimeout(() => {
                     updateRewardDisplay('current-reward-text', currentReward);
-                    
                     setTimeout(() => {
                         resEl.classList.add('opacity-0');
                         setTimeout(() => finishGame(), 300);
@@ -837,7 +986,7 @@
                 playSound('wrong');
                 currentReward = 0;
                 resText.innerText = "失敗...";
-                resText.className = "text-6xl sm:text-7xl font-black text-slate-500 drop-shadow-[0_0_20px_rgba(100,116,139,1)] transform scale-100 transition-transform duration-500";
+                resText.className = "text-6xl sm:text-7xl font-black text-[var(--text-muted)] drop-shadow-md transform scale-100 transition-transform duration-500";
                 
                 document.body.classList.remove('shake');
                 void document.body.offsetWidth;
@@ -845,7 +994,6 @@
 
                 setTimeout(() => {
                     updateRewardDisplay('current-reward-text', currentReward);
-                    
                     setTimeout(() => {
                         resEl.classList.add('opacity-0');
                         setTimeout(() => finishGame(), 300);
@@ -854,18 +1002,15 @@
             }
         }
 
-        window.declineDoubleUp = () => {
-            finishGame();
-        };
+        window.declineDoubleUp = () => finishGame();
 
         function finishGame() {
             const bonusTextEl = document.getElementById('bonus-value-text');
             const styleInfo = getRewardColorClass(currentReward);
             
             bonusTextEl.innerText = `${currentReward.toLocaleString()}円`;
-            
             if (currentReward === 0) {
-                bonusTextEl.className = "text-5xl font-black italic tracking-tighter mb-4 text-slate-500";
+                bonusTextEl.className = "text-5xl font-black italic tracking-tighter mb-4 text-[var(--text-muted)] drop-shadow-sm";
             } else {
                 bonusTextEl.className = `text-6xl italic tracking-tighter mb-4 transition-all duration-1000 ${styleInfo.class} ${styleInfo.shadow}`;
             }
@@ -878,16 +1023,11 @@
             document.getElementById('double-up-screen').classList.remove('active');
             document.getElementById('clear-screen').classList.add('active');
 
-            // --- Firebase共有ログへ保存 ---
             if (db && currentUser) {
                 const logCol = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
-                // 安全対策: ローカル時間を追加し、サーバー遅延時でも正しくソートできるようにする
                 addDoc(logCol, { 
-                    date: dateStr, 
-                    time: timeStr, 
-                    reward: currentReward, 
-                    timestamp: serverTimestamp(),
-                    localTime: Date.now() 
+                    date: dateStr, time: timeStr, reward: currentReward, 
+                    timestamp: serverTimestamp(), localTime: Date.now() 
                 }).catch(e => console.error(e));
             }
         }
