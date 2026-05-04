@@ -68,7 +68,6 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            /* スクロールバグ防止のため manipulation に変更 */
             touch-action: manipulation;
             transition: background-color 0.5s ease, color 0.5s ease;
         }
@@ -107,7 +106,7 @@
             overflow: hidden;
             background-color: var(--bg-screen);
             transition: background-color 0.5s ease;
-            touch-action: none; /* ゲームキャンバス上でのみスワイプを無効化 */
+            touch-action: none;
         }
 
         .game-circle {
@@ -270,7 +269,6 @@
             overflow-y: auto;
             width: 100%;
             padding-right: 8px;
-            /* スクロールを確実に有効にする */
             -webkit-overflow-scrolling: touch;
         }
         .log-item {
@@ -580,6 +578,7 @@
         let currentComboColor = THEMES[currentTheme].baseCombo.c;
         let currentShadowColor = THEMES[currentTheme].baseCombo.s;
 
+        // 本番用目標スコア
         const TARGET = 5000;
         let score = 0, combo = 0, maxCombo = 0, circles = [], count = 0, anim, isStarted = false, chestValues = [];
         let isChestOpened = false;
@@ -587,7 +586,7 @@
         
         let doubleUpCount = 0;
         
-        // 管理者モード
+        // 管理者モードタップ処理
         let leftTap = 0, lastTap = 0;
         window.handleAdminTap = (side) => {
             const now = Date.now();
@@ -934,10 +933,13 @@
             
             // 宝箱UIのリセット
             const chests = document.querySelectorAll('.chest');
-            chests.forEach(chest => {
+            const labels = ['宝箱 A', '宝箱 B', '宝箱 C'];
+            chests.forEach((chest, index) => {
                 chest.classList.remove('opened', 'dimmed');
                 const label = chest.querySelector('.chest-label');
-                if (label) label.innerText = label.innerText.split(' ')[0] + ' ' + ['A','B','C'][chest.id.split('-')[1]];
+                if (label) {
+                    label.innerText = labels[index];
+                }
             });
             document.getElementById('treasure-msg').innerText = "運命の報酬を選べ、塚田淳！";
 
@@ -1097,8 +1099,8 @@
                                 finishGame();
                             }
                         }, 300);
-                    }, 1200); // 待ち時間を少し短縮 (2500 -> 1200)
-                }, 1000); // 待ち時間を少し短縮 (2000 -> 1000)
+                    }, 1200); // 待ち時間を少し短縮
+                }, 1000); // 待ち時間を少し短縮
             } else {
                 playSound('wrong');
                 currentReward = 0;
