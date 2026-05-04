@@ -68,7 +68,8 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            touch-action: none;
+            /* スクロールバグ防止のため manipulation に変更 */
+            touch-action: manipulation;
             transition: background-color 0.5s ease, color 0.5s ease;
         }
 
@@ -106,6 +107,7 @@
             overflow: hidden;
             background-color: var(--bg-screen);
             transition: background-color 0.5s ease;
+            touch-action: none; /* ゲームキャンバス上でのみスワイプを無効化 */
         }
 
         .game-circle {
@@ -128,6 +130,7 @@
             background: var(--numpad-bg);
             padding-bottom: env(safe-area-inset-bottom, 16px);
             transition: background-color 0.5s ease;
+            touch-action: none;
         }
 
         .num-btn {
@@ -235,12 +238,21 @@
 
         .chest {
             cursor: pointer;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             touch-action: manipulation;
         }
         .chest:hover { transform: scale(1.1); }
         .chest:active { transform: scale(0.9); }
-        .chest-svg { width: 100px; height: 100px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
+        .chest.opened {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0.8));
+        }
+        .chest.dimmed {
+            opacity: 0.3;
+            transform: scale(0.9);
+            filter: grayscale(100%);
+        }
+        .chest-svg { width: 100px; height: 100px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); transition: all 0.3s ease; }
 
         .shake {
             animation: shake-anim 0.3s cubic-bezier(.36,.07,.19,.97) both;
@@ -258,7 +270,8 @@
             overflow-y: auto;
             width: 100%;
             padding-right: 8px;
-            touch-action: pan-y;
+            /* スクロールを確実に有効にする */
+            -webkit-overflow-scrolling: touch;
         }
         .log-item {
             background: var(--panel-bg);
@@ -381,31 +394,31 @@
     <div id="treasure-screen" class="screen items-center justify-center p-8 bg-[var(--bg-main)] bg-opacity-95">
         <div class="text-center w-full">
             <h2 class="text-3xl font-black text-yellow-500 mb-2 drop-shadow-md">チャレンジ達成!!</h2>
-            <p class="text-[var(--text-main)] text-lg mb-12 font-bold italic">運命の報酬を選べ、塚田淳！</p>
-            <div class="flex justify-around items-center w-full max-w-md gap-4 mx-auto">
-                <div class="chest" onclick="openChest(0)">
+            <p id="treasure-msg" class="text-[var(--text-main)] text-lg mb-12 font-bold italic transition-opacity duration-300">運命の報酬を選べ、塚田淳！</p>
+            <div class="flex justify-around items-center w-full max-w-md gap-4 mx-auto" id="chest-container">
+                <div class="chest" id="chest-0" onclick="openChest(0)">
                     <svg class="chest-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="2" y="10" width="20" height="10" rx="2" fill="#8B4513" stroke="#FBBF24" stroke-width="1.5"/>
                         <path d="M2 10C2 7 5 5 12 5C19 5 22 7 22 10" fill="#A0522D" stroke="#FBBF24" stroke-width="1.5"/>
                         <rect x="10" y="9" width="4" height="3" rx="1" fill="#FBBF24"/>
                     </svg>
-                    <p class="mt-2 text-[10px] font-bold text-yellow-500 uppercase tracking-widest drop-shadow-sm">宝箱 A</p>
+                    <p class="mt-2 text-[10px] font-bold text-yellow-500 uppercase tracking-widest drop-shadow-sm chest-label">宝箱 A</p>
                 </div>
-                <div class="chest" onclick="openChest(1)">
+                <div class="chest" id="chest-1" onclick="openChest(1)">
                     <svg class="chest-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="2" y="10" width="20" height="10" rx="2" fill="#8B4513" stroke="#FBBF24" stroke-width="1.5"/>
                         <path d="M2 10C2 7 5 5 12 5C19 5 22 7 22 10" fill="#A0522D" stroke="#FBBF24" stroke-width="1.5"/>
                         <rect x="10" y="9" width="4" height="3" rx="1" fill="#FBBF24"/>
                     </svg>
-                    <p class="mt-2 text-[10px] font-bold text-yellow-500 uppercase tracking-widest drop-shadow-sm">宝箱 B</p>
+                    <p class="mt-2 text-[10px] font-bold text-yellow-500 uppercase tracking-widest drop-shadow-sm chest-label">宝箱 B</p>
                 </div>
-                <div class="chest" onclick="openChest(2)">
+                <div class="chest" id="chest-2" onclick="openChest(2)">
                     <svg class="chest-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="2" y="10" width="20" height="10" rx="2" fill="#8B4513" stroke="#FBBF24" stroke-width="1.5"/>
                         <path d="M2 10C2 7 5 5 12 5C19 5 22 7 22 10" fill="#A0522D" stroke="#FBBF24" stroke-width="1.5"/>
                         <rect x="10" y="9" width="4" height="3" rx="1" fill="#FBBF24"/>
                     </svg>
-                    <p class="mt-2 text-[10px] font-bold text-yellow-500 uppercase tracking-widest drop-shadow-sm">宝箱 C</p>
+                    <p class="mt-2 text-[10px] font-bold text-yellow-500 uppercase tracking-widest drop-shadow-sm chest-label">宝箱 C</p>
                 </div>
             </div>
         </div>
@@ -469,10 +482,10 @@
         <div class="admin-hitbox admin-hitbox-right" onclick="handleAdminTap('right')"></div>
         
         <h2 class="text-2xl font-black mb-6 text-[var(--accent)] uppercase tracking-tighter text-center italic drop-shadow-sm">共有：栄光の記録</h2>
-        <div id="log-list" class="log-container">
+        <div id="log-list" class="log-container relative z-10">
             <div class="flex justify-center py-10"><span class="loader"></span></div>
         </div>
-        <button onclick="backToStartFromLog()" class="mt-8 w-full max-w-xs bg-[var(--panel-bg)] border border-[var(--border-color)] text-[var(--text-main)] py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition">戻る</button>
+        <button onclick="backToStartFromLog()" class="mt-8 w-full max-w-xs bg-[var(--panel-bg)] border border-[var(--border-color)] text-[var(--text-main)] py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition relative z-10">戻る</button>
     </div>
 
     <div id="admin-confirm-modal" style="display: none;" class="fixed inset-0 bg-black/80 z-[200] items-center justify-center p-4">
@@ -505,7 +518,7 @@
         const appId = 'atsushi-5000-challenge-final'; 
         let currentUser = null;
         
-        // 起動時のFirebase初期化処理（非同期で確実に待つ）
+        // 起動時のFirebase初期化処理
         async function initFirebase() {
             try {
                 const app = initializeApp(firebaseConfig);
@@ -567,7 +580,6 @@
         let currentComboColor = THEMES[currentTheme].baseCombo.c;
         let currentShadowColor = THEMES[currentTheme].baseCombo.s;
 
-        // 目標スコアを5000に設定 (正式版)
         const TARGET = 5000;
         let score = 0, combo = 0, maxCombo = 0, circles = [], count = 0, anim, isStarted = false, chestValues = [];
         let isChestOpened = false;
@@ -575,7 +587,7 @@
         
         let doubleUpCount = 0;
         
-        // 管理者モードタップ処理
+        // 管理者モード
         let leftTap = 0, lastTap = 0;
         window.handleAdminTap = (side) => {
             const now = Date.now();
@@ -648,6 +660,15 @@
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
                 osc.start(now);
                 osc.stop(now + 0.05);
+            } else if (type === 'treasure') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
+                osc.frequency.exponentialRampToValueAtTime(1760, now + 0.4);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
             }
         }
 
@@ -678,9 +699,7 @@
             });
 
             resetComboEffect();
-            if (!isStarted) {
-                initStartBg();
-            }
+            if (!isStarted) initStartBg();
         };
 
         function generateNumpad() {
@@ -711,7 +730,8 @@
                 this.el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
                 
                 this.x = Math.random() * (parent.clientWidth - this.size); this.y = Math.random() * (parent.clientHeight - this.size);
-                const spd = isStarted ? 1.0 : 0.6; this.dx = (Math.random() - 0.5) * spd * 4; this.dy = (Math.random() - 0.5) * spd * 4;
+                
+                const spd = isStarted ? 1.5 : 0.6; this.dx = (Math.random() - 0.5) * spd * 4; this.dy = (Math.random() - 0.5) * spd * 4;
                 parent.appendChild(this.el);
             }
             update() {
@@ -744,7 +764,6 @@
                 return;
             }
 
-            // 認証が未完了で急いで押された場合の待機・再試行
             if (!currentUser && auth) {
                 try {
                     const userCred = await signInAnonymously(auth);
@@ -912,7 +931,18 @@
         function prepareTreasure() {
             isStarted = false; isChestOpened = false;
             document.getElementById('game-screen').classList.remove('active');
+            
+            // 宝箱UIのリセット
+            const chests = document.querySelectorAll('.chest');
+            chests.forEach(chest => {
+                chest.classList.remove('opened', 'dimmed');
+                const label = chest.querySelector('.chest-label');
+                if (label) label.innerText = label.innerText.split(' ')[0] + ' ' + ['A','B','C'][chest.id.split('-')[1]];
+            });
+            document.getElementById('treasure-msg').innerText = "運命の報酬を選べ、塚田淳！";
+
             document.getElementById('treasure-screen').classList.add('active');
+            
             let array = [1500, 2500, 3500];
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -923,35 +953,52 @@
 
         window.openChest = (index) => {
             if (isChestOpened) return;
-            isChestOpened = true; playSound('combo');
+            isChestOpened = true; 
+            playSound('treasure');
             currentReward = chestValues[index];
             
-            doubleUpCount = 0;
-            
-            // 全てのUI状態を確実に初期化
-            document.getElementById('double-up-title').innerHTML = `
-                <span class="text-3xl sm:text-4xl w-full">ダブルアップチャレンジ</span>
-                <span class="text-xl sm:text-2xl text-rose-400 drop-shadow-sm">(1回目)</span>
-            `;
-            
-            updateRewardDisplay('current-reward-text', currentReward);
-            
-            document.getElementById('double-up-actions').classList.remove('hidden');
-            document.getElementById('double-up-presentation').classList.add('hidden');
-            document.getElementById('double-up-roulette').classList.add('hidden');
-            document.getElementById('double-up-roulette').classList.remove('flex');
-            document.getElementById('double-up-result').classList.add('hidden');
-            document.getElementById('double-up-result').classList.remove('flex');
-            document.getElementById('double-up-result').classList.add('opacity-0');
-            
-            const statusText = document.getElementById('roulette-status-text');
-            if(statusText) {
-                statusText.innerText = "抽選中...";
-                statusText.className = "text-[var(--text-muted)] font-bold mb-4 animate-pulse text-lg";
-            }
-            
-            document.getElementById('treasure-screen').classList.remove('active');
-            document.getElementById('double-up-screen').classList.add('active');
+            // 選んだ宝箱を強調し、他を暗くする演出を追加
+            const chests = document.querySelectorAll('.chest');
+            chests.forEach((chest, i) => {
+                if (i === index) {
+                    chest.classList.add('opened');
+                    const label = chest.querySelector('.chest-label');
+                    if(label) label.innerText = `${currentReward}円`;
+                } else {
+                    chest.classList.add('dimmed');
+                }
+            });
+
+            document.getElementById('treasure-msg').innerText = "運命の扉が開かれた...！";
+
+            // 演出のため1.5秒待機してから遷移
+            setTimeout(() => {
+                doubleUpCount = 0;
+                
+                document.getElementById('double-up-title').innerHTML = `
+                    <span class="text-3xl sm:text-4xl w-full">ダブルアップチャレンジ</span>
+                    <span class="text-xl sm:text-2xl text-rose-400 drop-shadow-sm">(1回目)</span>
+                `;
+                
+                updateRewardDisplay('current-reward-text', currentReward);
+                
+                document.getElementById('double-up-actions').classList.remove('hidden');
+                document.getElementById('double-up-presentation').classList.add('hidden');
+                document.getElementById('double-up-roulette').classList.add('hidden');
+                document.getElementById('double-up-roulette').classList.remove('flex');
+                document.getElementById('double-up-result').classList.add('hidden');
+                document.getElementById('double-up-result').classList.remove('flex');
+                document.getElementById('double-up-result').classList.add('opacity-0');
+                
+                const statusText = document.getElementById('roulette-status-text');
+                if(statusText) {
+                    statusText.innerText = "抽選中...";
+                    statusText.className = "text-[var(--text-muted)] font-bold mb-4 animate-pulse text-lg";
+                }
+                
+                document.getElementById('treasure-screen').classList.remove('active');
+                document.getElementById('double-up-screen').classList.add('active');
+            }, 1500);
         };
 
         window.playDoubleUp = () => {
@@ -1050,8 +1097,8 @@
                                 finishGame();
                             }
                         }, 300);
-                    }, 2500);
-                }, 2000); 
+                    }, 1200); // 待ち時間を少し短縮 (2500 -> 1200)
+                }, 1000); // 待ち時間を少し短縮 (2000 -> 1000)
             } else {
                 playSound('wrong');
                 currentReward = 0;
@@ -1067,8 +1114,8 @@
                     setTimeout(() => {
                         resEl.classList.add('opacity-0');
                         setTimeout(() => finishGame(), 300);
-                    }, 2500); 
-                }, 2000);
+                    }, 1200); // 待ち時間を少し短縮
+                }, 1000); // 待ち時間を少し短縮
             }
         }
 
