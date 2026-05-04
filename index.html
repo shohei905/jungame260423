@@ -139,7 +139,7 @@
             font-weight: 900;
             border-radius: 12px;
             background: var(--primary-light);
-            color: white; /* ボタンの文字色は常に白で固定 */
+            color: white;
             box-shadow: 0 4px 0 var(--primary);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
@@ -271,13 +271,6 @@
             align-items: center;
         }
 
-        .loader {
-            width: 20px; height: 20px;
-            border: 3px solid var(--text-muted); border-bottom-color: transparent; border-radius: 50%;
-            display: inline-block; animation: rotation 1s linear infinite;
-        }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         .admin-hitbox {
             position: absolute;
             top: 0; width: 80px; height: 80px;
@@ -285,8 +278,6 @@
         }
         .admin-hitbox-left { left: 0; }
         .admin-hitbox-right { right: 0; }
-
-        .title-nowrap { white-space: nowrap; }
         
         .presentation-area {
             min-height: 200px;
@@ -294,6 +285,30 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+        }
+
+        .loader {
+            width: 20px; height: 20px;
+            border: 3px solid var(--text-muted); border-bottom-color: transparent; border-radius: 50%;
+            display: inline-block; animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 虹色演出用クラス */
+        .text-rainbow {
+            background: linear-gradient(to right, #ff0000, #ff7f00, #eab308, #22c55e, #3b82f6, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: rainbow-anim 3s linear infinite;
+            background-size: 200% auto;
+        }
+        .shadow-rainbow {
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
+        }
+        @keyframes rainbow-anim {
+            0% { background-position: 0% center; }
+            100% { background-position: -200% center; }
         }
     </style>
 </head>
@@ -305,7 +320,7 @@
             <p class="text-red-600 font-black text-3xl mb-4 animate-bounce tracking-tighter">
                 準備はいいか！塚田淳！
             </p>
-            <h1 class="text-4xl font-black mb-8 tracking-tighter text-[var(--text-main)] text-center leading-tight drop-shadow-md transition-colors duration-500">
+            <h1 class="text-4xl font-black mb-10 tracking-tighter text-[var(--text-main)] text-center leading-tight drop-shadow-md transition-colors duration-500">
                 サークルカウント<br><span class="text-[var(--accent)] text-5xl">ゲーム</span>
             </h1>
 
@@ -316,7 +331,6 @@
                     <button id="theme-standard" onclick="setTheme('standard')" class="theme-btn w-11 h-11 rounded-full bg-blue-500 border-4 border-white scale-110 shadow-[0_0_15px_rgba(59,130,246,0.6)] transition-all opacity-100"></button>
                     <button id="theme-cyber" onclick="setTheme('cyber')" class="theme-btn w-11 h-11 rounded-full bg-fuchsia-500 border-4 border-transparent scale-100 opacity-50 transition-all"></button>
                     <button id="theme-magma" onclick="setTheme('magma')" class="theme-btn w-11 h-11 rounded-full bg-red-500 border-4 border-transparent scale-100 opacity-50 transition-all"></button>
-                    <!-- 白（ライト）テーマ追加 -->
                     <button id="theme-light" onclick="setTheme('light')" class="theme-btn w-11 h-11 rounded-full bg-slate-100 border-4 border-transparent scale-100 opacity-50 transition-all"></button>
                 </div>
             </div>
@@ -401,7 +415,12 @@
     <div id="double-up-screen" class="screen items-center justify-center p-8 bg-[var(--bg-main)] bg-opacity-95">
         <div class="text-center w-full">
             <p class="text-red-600 font-black text-2xl sm:text-3xl mb-4 animate-bounce tracking-tighter">準備はいいか！塚田淳！</p>
-            <h2 class="text-3xl sm:text-4xl font-black text-rose-500 mb-2 drop-shadow-md animate-pulse tracking-tighter title-nowrap">ダブルアップチャレンジ</h2>
+            
+            <h2 id="double-up-title" class="font-black text-rose-500 mb-6 drop-shadow-md animate-pulse tracking-tighter flex flex-col items-center gap-1">
+                <span class="text-3xl sm:text-4xl w-full">ダブルアップチャレンジ</span>
+                <span class="text-xl sm:text-2xl text-rose-400 drop-shadow-sm">(1回目)</span>
+            </h2>
+            
             <p class="text-[var(--text-muted)] text-lg mb-8 font-bold italic">現在の報酬: <span id="current-reward-text" class="text-3xl text-blue-500 drop-shadow-md">0円</span></p>
 
             <div id="double-up-actions" class="flex flex-col gap-4 w-full max-w-sm mx-auto">
@@ -414,6 +433,7 @@
                 <button onclick="declineDoubleUp()" class="w-full bg-[var(--panel-bg)] border border-[var(--border-color)] text-[var(--text-muted)] py-3 rounded-2xl font-bold text-lg shadow-sm active:scale-95 transition">やめておく (確定)</button>
             </div>
 
+            <!-- ルーレット・結果表示エリア -->
             <div id="double-up-presentation" class="hidden w-full max-w-sm mx-auto presentation-area mt-4">
                 <div id="double-up-roulette" class="hidden w-full flex-col items-center justify-center">
                     <p id="roulette-status-text" class="text-[var(--text-muted)] font-bold mb-4 animate-pulse text-lg">抽選中...</p>
@@ -483,16 +503,21 @@
         
         let db, auth;
         const appId = 'atsushi-5000-challenge-final'; 
-        
-        try {
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            signInAnonymously(auth);
-        } catch (err) { console.error("Firebase init failed."); }
-
         let currentUser = null;
-        if (auth) { onAuthStateChanged(auth, (user) => { currentUser = user; }); }
+        
+        // 起動時のFirebase初期化処理（非同期で確実に待つ）
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                onAuthStateChanged(auth, (user) => { currentUser = user; });
+                await signInAnonymously(auth);
+            } catch (err) { 
+                console.error("Firebase init failed.", err); 
+            }
+        }
+        initFirebase();
 
         // === テーマ定義 ===
         const THEMES = {
@@ -542,11 +567,13 @@
         let currentComboColor = THEMES[currentTheme].baseCombo.c;
         let currentShadowColor = THEMES[currentTheme].baseCombo.s;
 
-        // 正式版：目標5000
+        // 目標スコアを5000に設定 (正式版)
         const TARGET = 5000;
         let score = 0, combo = 0, maxCombo = 0, circles = [], count = 0, anim, isStarted = false, chestValues = [];
         let isChestOpened = false;
         let currentReward = 0; 
+        
+        let doubleUpCount = 0;
         
         // 管理者モードタップ処理
         let leftTap = 0, lastTap = 0;
@@ -572,14 +599,16 @@
         };
 
         function getRewardColorClass(reward) {
-            // 背景白でも視認できるようにシャドウの透明度やベース色を調整しています
-            if (reward === 0) return { class: 'text-[var(--text-muted)]', shadow: 'none' };
-            if (reward === 1500) return { class: 'text-blue-500', shadow: 'drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]' }; 
-            if (reward === 2500) return { class: 'text-emerald-500', shadow: 'drop-shadow-[0_0_10px_rgba(16,185,129,0.6)]' }; 
-            if (reward === 3000) return { class: 'text-fuchsia-500 font-black', shadow: 'drop-shadow-[0_0_12px_rgba(217,70,239,0.6)]' }; 
-            if (reward === 3500) return { class: 'text-cyan-500 font-black', shadow: 'drop-shadow-[0_0_12px_rgba(6,182,212,0.6)]' }; 
-            if (reward === 5000) return { class: 'text-amber-500 font-black', shadow: 'drop-shadow-[0_0_15px_rgba(245,158,11,0.7)]' }; 
-            if (reward === 7000) return { class: 'text-rose-500 font-black animate-pulse', shadow: 'drop-shadow-[0_0_20px_rgba(225,29,72,0.8)]' }; 
+            if (reward === 0) return { class: 'text-slate-500', shadow: 'none' };
+            if (reward === 1500) return { class: 'text-sky-400', shadow: 'drop-shadow-[0_0_8px_rgba(56,189,248,0.6)]' }; 
+            if (reward === 2500) return { class: 'text-blue-500', shadow: 'drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]' }; 
+            if (reward === 3000) return { class: 'text-indigo-500 font-black', shadow: 'drop-shadow-[0_0_12px_rgba(99,102,241,0.6)]' }; 
+            if (reward === 3500) return { class: 'text-purple-500 font-black', shadow: 'drop-shadow-[0_0_12px_rgba(168,85,247,0.6)]' }; 
+            if (reward === 5000) return { class: 'text-fuchsia-500 font-black', shadow: 'drop-shadow-[0_0_15px_rgba(217,70,239,0.7)]' }; 
+            if (reward === 6000) return { class: 'text-orange-500 font-black', shadow: 'drop-shadow-[0_0_15px_rgba(249,115,22,0.8)]' }; 
+            if (reward === 7000) return { class: 'text-red-500 font-black animate-pulse', shadow: 'drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]' }; 
+            if (reward === 10000) return { class: 'text-rose-600 font-black animate-pulse', shadow: 'drop-shadow-[0_0_20px_rgba(225,29,72,0.9)]' }; 
+            if (reward === 14000) return { class: 'text-rainbow font-black', shadow: 'shadow-rainbow' }; 
             return { class: 'text-[var(--text-main)]', shadow: 'none' };
         }
 
@@ -622,7 +651,6 @@
             }
         }
 
-        // === テーマ変更処理 ===
         window.setTheme = (themeName) => {
             currentTheme = themeName;
             document.documentElement.setAttribute('data-theme', themeName);
@@ -634,7 +662,6 @@
                 light: { shadow: 'rgba(14,165,233,0.5)', border: '#0f172a' }
             };
             
-            // ボタンのUI更新
             document.querySelectorAll('.theme-btn').forEach(btn => {
                 const tName = btn.id.replace('theme-', '');
                 if (tName === themeName) {
@@ -650,7 +677,6 @@
                 }
             });
 
-            // コンボ色リセットと背景再描画
             resetComboEffect();
             if (!isStarted) {
                 initStartBg();
@@ -681,7 +707,6 @@
                 this.parent = parent; this.size = 40 + Math.random() * 40; this.el = document.createElement('div');
                 this.el.className = 'game-circle'; this.el.style.width = `${this.size}px`; this.el.style.height = `${this.size}px`;
                 
-                // テーマに応じた色を選択
                 const colors = THEMES[currentTheme].colors;
                 this.el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
                 
@@ -708,15 +733,28 @@
         };
 
         let unsubscribeLogs = null;
-        window.showLog = () => {
+        window.showLog = async () => {
             document.getElementById('start-screen').classList.remove('active');
             document.getElementById('log-screen').classList.add('active');
             
             const listEl = document.getElementById('log-list');
-            if (!db || !currentUser) {
-                listEl.innerHTML = '<p class="text-slate-500 text-center py-8">接続エラー</p>';
+            
+            if (!db) {
+                listEl.innerHTML = '<p class="text-[var(--text-muted)] text-center py-8">接続エラー</p>';
                 return;
             }
+
+            // 認証が未完了で急いで押された場合の待機・再試行
+            if (!currentUser && auth) {
+                try {
+                    const userCred = await signInAnonymously(auth);
+                    currentUser = userCred.user;
+                } catch(e) {
+                    listEl.innerHTML = '<p class="text-[var(--text-muted)] text-center py-8">認証エラー</p>';
+                    return;
+                }
+            }
+
             if (unsubscribeLogs) unsubscribeLogs();
             const logCol = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
             unsubscribeLogs = onSnapshot(logCol, (snap) => {
@@ -813,7 +851,6 @@
                 const theme = THEMES[currentTheme];
                 let nc = theme.baseCombo.c, ns = theme.baseCombo.s;
                 
-                // コンボ数に応じて色を昇格
                 for (let stage of theme.comboStages) {
                     if (combo > stage.limit) {
                         nc = stage.c; ns = stage.s;
@@ -889,12 +926,22 @@
             isChestOpened = true; playSound('combo');
             currentReward = chestValues[index];
             
+            doubleUpCount = 0;
+            
+            // 全てのUI状態を確実に初期化
+            document.getElementById('double-up-title').innerHTML = `
+                <span class="text-3xl sm:text-4xl w-full">ダブルアップチャレンジ</span>
+                <span class="text-xl sm:text-2xl text-rose-400 drop-shadow-sm">(1回目)</span>
+            `;
+            
             updateRewardDisplay('current-reward-text', currentReward);
             
             document.getElementById('double-up-actions').classList.remove('hidden');
             document.getElementById('double-up-presentation').classList.add('hidden');
             document.getElementById('double-up-roulette').classList.add('hidden');
+            document.getElementById('double-up-roulette').classList.remove('flex');
             document.getElementById('double-up-result').classList.add('hidden');
+            document.getElementById('double-up-result').classList.remove('flex');
             document.getElementById('double-up-result').classList.add('opacity-0');
             
             const statusText = document.getElementById('roulette-status-text');
@@ -918,12 +965,16 @@
             const rText = document.getElementById('roulette-text');
             const statusText = document.getElementById('roulette-status-text');
             
+            statusText.innerText = "抽選中...";
+            statusText.className = "text-[var(--text-muted)] font-bold mb-4 animate-pulse text-lg";
+            
+            const duration = 8000; 
+            const startTime = Date.now();
             let ticks = 0;
-            const maxTicks = 35; 
-            let delay = 60; 
             const isWin = Math.random() < 0.5;
 
             function runRoulette() {
+                const elapsed = Date.now() - startTime;
                 ticks++;
                 playSound('tick');
 
@@ -937,25 +988,29 @@
                     rText.className = "text-5xl font-black text-blue-500 drop-shadow-md";
                 }
 
-                if (ticks === 15) {
+                if (elapsed > 2000 && elapsed <= 4000) {
                     statusText.innerText = "まだまだ！";
                     statusText.className = "text-amber-500 font-bold mb-4 animate-pulse text-xl drop-shadow-sm";
-                }
-                if (ticks === 25) {
+                } else if (elapsed > 4000 && elapsed <= 5500) {
                     statusText.innerText = "どっちだ！？";
                     statusText.className = "text-orange-500 font-black mb-4 animate-bounce text-2xl drop-shadow-sm";
-                }
-                if (ticks === 32) {
-                    statusText.innerText = "決まるぞ！！！";
+                } else if (elapsed > 5500 && elapsed <= 7000) {
+                    statusText.innerText = "決まるぞ！ジュン！";
                     statusText.className = "text-rose-500 font-black mb-4 animate-ping text-3xl drop-shadow-sm";
+                } else if (elapsed > 7000) {
+                    statusText.innerText = "どっちだ！？淳！！！！";
+                    statusText.className = "text-red-600 font-black mb-4 animate-ping text-4xl drop-shadow-lg";
                 }
 
-                if (ticks > 25) delay += 30;
-
-                if (ticks >= maxTicks) showDoubleUpResult(isWin);
-                else setTimeout(runRoulette, delay);
+                if (elapsed >= duration) {
+                    showDoubleUpResult(isWin);
+                } else {
+                    const progress = elapsed / duration;
+                    const delay = 50 + (progress * progress) * 350; 
+                    setTimeout(runRoulette, delay);
+                }
             }
-            setTimeout(runRoulette, delay);
+            setTimeout(runRoulette, 50);
         };
 
         function showDoubleUpResult(isWin) {
@@ -972,6 +1027,8 @@
             if (isWin) {
                 playSound('correct');
                 currentReward *= 2;
+                doubleUpCount++;
+                
                 resText.innerText = "成功！！";
                 resText.className = "text-6xl sm:text-7xl font-black text-yellow-500 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] transform scale-110 transition-transform duration-500";
                 
@@ -979,7 +1036,20 @@
                     updateRewardDisplay('current-reward-text', currentReward);
                     setTimeout(() => {
                         resEl.classList.add('opacity-0');
-                        setTimeout(() => finishGame(), 300);
+                        setTimeout(() => {
+                            if (doubleUpCount < 2) {
+                                document.getElementById('double-up-title').innerHTML = `
+                                    <span class="text-3xl sm:text-4xl w-full">ダブルアップチャレンジ</span>
+                                    <span class="text-xl sm:text-2xl text-rose-400 drop-shadow-sm">(2回目)</span>
+                                `;
+                                document.getElementById('double-up-actions').classList.remove('hidden');
+                                resEl.classList.add('hidden');
+                                resEl.classList.remove('flex');
+                                document.getElementById('double-up-presentation').classList.add('hidden');
+                            } else {
+                                finishGame();
+                            }
+                        }, 300);
                     }, 2500);
                 }, 2000); 
             } else {
@@ -1009,11 +1079,7 @@
             const styleInfo = getRewardColorClass(currentReward);
             
             bonusTextEl.innerText = `${currentReward.toLocaleString()}円`;
-            if (currentReward === 0) {
-                bonusTextEl.className = "text-5xl font-black italic tracking-tighter mb-4 text-[var(--text-muted)] drop-shadow-sm";
-            } else {
-                bonusTextEl.className = `text-6xl italic tracking-tighter mb-4 transition-all duration-1000 ${styleInfo.class} ${styleInfo.shadow}`;
-            }
+            bonusTextEl.className = `text-6xl italic tracking-tighter mb-4 transition-all duration-1000 ${styleInfo.class} ${styleInfo.shadow}`;
 
             const now = new Date();
             const dateStr = now.getFullYear() + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + ('0' + now.getDate()).slice(-2);
